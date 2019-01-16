@@ -33,6 +33,9 @@ class CURLRequest(object):
         self._curl_handler.setopt(pycurl.HEADERFUNCTION,
                                   self._parse_header_line)
 
+    def configure(self, request):
+        pass
+
     def send(self, request, stream=False, timeout=None, verify=True,
              cert=None):
         """Performs the request using PyCURL, and upon success, returns a
@@ -62,7 +65,7 @@ class CURLRequest(object):
         """
 
         try:
-            # self._configure_curl_handler()
+            self.configure(request)
 
             body = self._curl_handler.perform_rb()
 

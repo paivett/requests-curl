@@ -76,7 +76,26 @@ class CURLRequest(object):
             raise requests_exception
 
     def _parse_header_line(self, header_line):
-        pass
+        """This callback will be invoked when parsing each line of the
+        response's headerds.
+
+        Args:
+            header_line (str): a line of the headers section.
+        """
+
+        # HTTP standard specifies that headers are encoded in iso-8859-1.
+        header_line = header_line.decode('iso-8859-1')
+
+        # Header lines include the first status line (HTTP/1.x ...).
+        # We are going to ignore all lines that don't have a colon in them.
+        # This will botch headers that are split on multiple lines...
+        if ':' not in header_line:
+            # Also, reset headers
+            self._response_headers = []
+            return
+
+        name, value = header_line.split(':', 1)
+        self._response_headers[name.strip().lower()] = value.strip()
 
     def _create_requests_response(self, request, body):
         """Creates a requests.Response instance to be returned after a curl request.

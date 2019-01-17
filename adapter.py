@@ -10,6 +10,7 @@ from requests.exceptions import (
 )
 from requests.structures import CaseInsensitiveDict
 from requests.utils import get_encoding_from_headers
+from requests.cookies import extract_cookies_to_jar
 from requests.adapters import BaseAdapter
 from requests import Response as RequestResponse
 from urllib3.util.retry import Retry
@@ -24,17 +25,129 @@ class CURLRequest(object):
     """Implementation of a request using PyCURL."""
 
     def __init__(self):
-        self._curl_handler = pycurl.Curl()
-        self._response_headers = []
+        # The handler is exposed so that subclasses can use it.
+        self.curl_handler = pycurl.Curl()
+
+        self._response_headers = {}
         self._response_reason = None
 
         # This configuration does not depend on the request itself, so
         # we do it once here.
-        self._curl_handler.setopt(pycurl.HEADERFUNCTION,
-                                  self._parse_header_line)
 
-    def configure(self, request):
+    def _reset(self):
+        """Resets internal state of the request, leaving it ready for a new
+        request.
+        """
+
+        self.curl_handler.reset()
+        self._response_headers = {}
+
+    def _configure(self, request, stream=False, timeout=None, verify=True,
+                   cert=None):
+        """Configures the internal state of the curl request, leaving the instance
+        ready to perform the request itself. Any previous configured state
+        will be reseted.
+
+        Args:
+            request (PreparedRequest): the request being sent.
+            stream (bool, optional): Defaults to False. Whether to stream the
+                request content.
+            timeout (float, optional): Defaults to None. How long to wait for
+                the server to send data before giving up, as a float, or a
+                `(connect timeout, read timeout)` tuple.
+            verify (bool, optional): Defaults to True. Either a boolean, in
+                which case it controls whether we verify the server's TLS
+                certificate, or a string, in which case it must be a path
+                to a CA bundle to use.
+            cert (str, optional): Defaults to None. Any user-provided SSL
+                certificate to be trusted.
+        """
+
+        self._reset()
+
+        # Perform some default curl configuration
+        self.curl_handler.setopt(pycurl.HEADERFUNCTION,
+                                 self.parse_header_line)
+        self.curl_handler.setopt(pycurl.URL, request.url)
+
+        self.configure_headers(request)
+        self.configure_timeout(timeout)
+        self.configure_cert(cert)
+        self.configure_ca(verify)
+
+        # Finally, configure the appropiate method
+        method = request.method.upper()
+
+        if request.method == "GET":
+            self.configure_method_get(request)
+        else:
+            raise RuntimeError("Method '{0}' not supported".format(method))
+
+        # TODO: Configure here also: SSL, method, headers
+
+    def configure_method_get(self, request):
+        """Configure the current request instance for a GET
+
+        Note:
+            This should not be called from user code. It is exposed to be
+            subclassed only.
+        """
+        # Do nothing, since for a GET, we need to configure nothing, it
+        # is the default behaviour
         pass
+
+    def configure_headers(self, request):
+        """Configures the request headers.
+
+        Args:
+            request (PreparedRequest): the request being sent.
+        """
+        headers = [
+            "{name}: {value}".format(name=name, value=value)
+            for name, value in six.iteritems(request.headers)
+        ]
+
+        self.curl_handler.setopt(pycurl.HTTPHEADER, headers)
+
+    def configure_timeout(self, timeout=None):
+        """Configures the timeout of this curl request.
+
+        Args:
+            timeout (float, optional): Defaults to None. How long to wait for
+                the server to send data before giving up, as a float, or a
+                `(connect timeout, read timeout)` tuple.
+        """
+        # TODO: Implement timeout configuration
+        pass
+
+    def configure_ca(self, verify=True):
+        """Configures the timeout of this curl request.
+
+        Args:
+            verify (bool, optional): Defaults to True. Either a boolean, in
+                which case it controls whether we verify the server's TLS
+                certificate, or a string, in which case it must be a path
+                to a CA bundle to use.
+        """
+        self.curl_handler.setopt(pycurl.SSL_VERIFYHOST, 0)
+        self.curl_handler.setopt(pycurl.SSL_VERIFYPEER, 0)
+
+    def configure_cert(self, cert=None):
+        """Configures the timeout of this curl request.
+
+        Args:
+            cert (str, optional): Defaults to None. Any user-provided SSL
+                certificate to be trusted.
+        """
+
+        if cert:
+            if isinstance(cert, six.string_types):
+                cert_path = cert
+            else:
+                cert_path, key_path = cert
+
+            self.curl_handler.setopt(pycurl.SSLCERT, cert_path)
+            self.curl_handler.setopt(pycurl.SSLKEY, key_path)
 
     def send(self, request, stream=False, timeout=None, verify=True,
              cert=None):
@@ -65,12 +178,12 @@ class CURLRequest(object):
         """
 
         try:
-            self.configure(request)
+            self._configure(request)
 
-            body = self._curl_handler.perform_rb()
+            body = self.curl_handler.perform_rb()
 
             response = self._create_requests_response(request,
-                                                      six.StringIO(body))
+                                                      six.BytesIO(body))
 
             return response
         except pycurl.error as ex:
@@ -78,9 +191,13 @@ class CURLRequest(object):
 
             raise requests_exception
 
-    def _parse_header_line(self, header_line):
-        """This callback will be invoked when parsing each line of the
-        response's headerds.
+    def parse_header_line(self, header_line):
+        """This method is the callback configured to parse each line of
+        the response headers.
+
+        Note:
+            This should not be called from user code. It is exposed to be
+            subclassed only.
 
         Args:
             header_line (str): a line of the headers section.
@@ -93,12 +210,24 @@ class CURLRequest(object):
         # We are going to ignore all lines that don't have a colon in them.
         # This will botch headers that are split on multiple lines...
         if ':' not in header_line:
-            # Also, reset headers
-            self._response_headers = []
             return
 
         name, value = header_line.split(':', 1)
-        self._response_headers[name.strip().lower()] = value.strip()
+        self.add_response_header(name.strip(), value.strip())
+
+    def add_response_header(self, name, value):
+        """Adds a response header value to the internal response headers.
+
+        Note:
+            This should not be called from user code. It is exposed to be
+            subclassed only.
+
+        Args:
+            name ([type]): [description]
+            value ([type]): [description]
+        """
+
+        self._response_headers[name] = value
 
     def _create_requests_response(self, request, body):
         """Creates a requests.Response instance to be returned after a curl request.
@@ -114,9 +243,10 @@ class CURLRequest(object):
         urllib3_response = URLLib3Rresponse(
             body=body,
             headers=self._response_headers,
-            status=self._curl_handler.getinfo(pycurl.HTTP_CODE),
+            status=self.curl_handler.getinfo(pycurl.HTTP_CODE),
             request_method=request.method,
-            reason=self._response_reason
+            reason=self._response_reason,
+            preload_content=False
         )
 
         response = RequestResponse()
@@ -127,9 +257,9 @@ class CURLRequest(object):
         response.headers = CaseInsensitiveDict(response.raw.headers)
         response.encoding = get_encoding_from_headers(response.headers)
 
-        request.cookies.extract_cookies_to_jar(response.cookies,
-                                               request,
-                                               urllib3_response)
+        extract_cookies_to_jar(response.cookies,
+                               request,
+                               urllib3_response)
 
         if isinstance(request.url, six.binary_type):
             response.url = request.url.decode("utf-8")
@@ -170,7 +300,10 @@ class CURLAdapter(BaseAdapter):
             proxies (dict,  optional): Defaults to None. The proxies
                 dictionary to apply to the request.
         """
-        pass
+        curl_request = CURLRequest()
+        response = curl_request.send(request, stream=stream, timeout=timeout,
+                                     verify=verify, cert=cert)
+        return response
 
     def close(self):
         """Cleans up adapter specific items."""

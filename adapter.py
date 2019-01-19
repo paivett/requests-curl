@@ -129,7 +129,7 @@ class CURLRequest(object):
                 to a CA bundle to use.
         """
         if verify:
-            self.curl_handler.setopt(pycurl.SSL_VERIFYHOST, 1)
+            self.curl_handler.setopt(pycurl.SSL_VERIFYHOST, 2)
             self.curl_handler.setopt(pycurl.SSL_VERIFYPEER, 2)
 
             ca_info = verify if isinstance(verify, six.string_types) else DEFAULT_CA_BUNDLE_PATH

@@ -11,7 +11,7 @@ from requests.exceptions import (
 from requests.structures import CaseInsensitiveDict
 from requests.utils import get_encoding_from_headers
 from requests.cookies import extract_cookies_to_jar
-from requests.adapters import BaseAdapter
+from requests.adapters import BaseAdapter, DEFAULT_CA_BUNDLE_PATH
 from requests import Response as RequestResponse
 from urllib3.util.retry import Retry
 from urllib3.exceptions import MaxRetryError
@@ -83,8 +83,6 @@ class CURLRequest(object):
         else:
             raise RuntimeError("Method '{0}' not supported".format(method))
 
-        # TODO: Configure here also: SSL, method, headers
-
     def configure_method_get(self, request):
         """Configure the current request instance for a GET
 
@@ -123,14 +121,26 @@ class CURLRequest(object):
     def configure_ca(self, verify=True):
         """Configures the timeout of this curl request.
 
+        Note:
+            This should not be called from user code. It is exposed to be
+            subclassed only.
+
         Args:
             verify (bool, optional): Defaults to True. Either a boolean, in
                 which case it controls whether we verify the server's TLS
                 certificate, or a string, in which case it must be a path
                 to a CA bundle to use.
         """
-        self.curl_handler.setopt(pycurl.SSL_VERIFYHOST, 0)
-        self.curl_handler.setopt(pycurl.SSL_VERIFYPEER, 0)
+        if verify:
+            self.curl_handler.setopt(pycurl.SSL_VERIFYHOST, 1)
+            self.curl_handler.setopt(pycurl.SSL_VERIFYPEER, 2)
+
+            ca_info = verify if isinstance(verify, six.string_types) else DEFAULT_CA_BUNDLE_PATH
+
+            self.curl_handler.setopt(pycurl.CAINFO, ca_info)
+        else:
+            self.curl_handler.setopt(pycurl.SSL_VERIFYHOST, 0)
+            self.curl_handler.setopt(pycurl.SSL_VERIFYPEER, 0)
 
     def configure_cert(self, cert=None):
         """Configures the timeout of this curl request.

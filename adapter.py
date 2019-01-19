@@ -11,14 +11,11 @@ from requests.exceptions import (
 from requests.structures import CaseInsensitiveDict
 from requests.utils import get_encoding_from_headers
 from requests.cookies import extract_cookies_to_jar
-from requests.adapters import BaseAdapter, DEFAULT_CA_BUNDLE_PATH
+from requests.adapters import BaseAdapter, DEFAULT_CA_BUNDLE_PATH, DEFAULT_RETRIES
 from requests import Response as RequestResponse
 from urllib3.util.retry import Retry
 from urllib3.exceptions import MaxRetryError
 from urllib3.response import HTTPResponse as URLLib3Rresponse
-
-
-DEFAULT_RETRIES = 3
 
 
 class CURLRequest(object):
@@ -311,9 +308,18 @@ class CURLAdapter(BaseAdapter):
                 dictionary to apply to the request.
         """
         curl_request = CURLRequest()
-        response = curl_request.send(request, stream=stream, timeout=timeout,
-                                     verify=verify, cert=cert)
-        return response
+
+        retries = self.max_retries
+
+        while not retries.is_exhausted():
+            try:
+                response = curl_request.send(request, stream=stream, timeout=timeout,
+                                             verify=verify, cert=cert)
+                return response
+            except RequestException as error:
+                retries = retries.increment(method=request.method, url=request.url,
+                                            error=error)
+                retries.sleep()
 
     def close(self):
         """Cleans up adapter specific items."""

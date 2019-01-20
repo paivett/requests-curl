@@ -107,13 +107,22 @@ class CURLRequest(object):
     def configure_timeout(self, timeout=None):
         """Configures the timeout of this curl request.
 
+        Note:
+            This should not be called from user code. It is exposed to be
+            subclassed only.
+
         Args:
             timeout (float, optional): Defaults to None. How long to wait for
                 the server to send data before giving up, as a float, or a
                 `(connect timeout, read timeout)` tuple.
         """
-        # TODO: Implement timeout configuration
-        pass
+        if isinstance(timeout, (tuple, list)):
+            conn_timeout, read_timeout = timeout
+            total_timeout = conn_timeout + read_timeout
+            self.curl_handler.setopt(pycurl.TIMEOUT_MS, int(total_timeout))
+            self.curl_handler.setopt(pycurl.CONNECTTIMEOUT_MS, int(conn_timeout))
+        elif timeout:
+            self.curl_handler.setopt(pycurl.TIMEOUT_MS, int(timeout))
 
     def configure_ca(self, verify=True):
         """Configures the timeout of this curl request.

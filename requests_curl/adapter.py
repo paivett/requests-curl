@@ -3,6 +3,7 @@
 import six
 import pycurl
 
+from collections import deque
 from requests.exceptions import (
     ConnectionError, ConnectTimeout, ReadTimeout, SSLError,
     ProxyError, RetryError, InvalidSchema, InvalidProxyURL,
@@ -11,25 +12,30 @@ from requests.exceptions import (
 from requests.structures import CaseInsensitiveDict
 from requests.utils import get_encoding_from_headers
 from requests.cookies import extract_cookies_to_jar
-from requests.adapters import BaseAdapter, DEFAULT_CA_BUNDLE_PATH, DEFAULT_RETRIES
+from requests.adapters import (
+    BaseAdapter, DEFAULT_CA_BUNDLE_PATH, DEFAULT_RETRIES,
+    DEFAULT_POOLSIZE, DEFAULT_POOLBLOCK
+)
 from requests import Response as RequestResponse
 from urllib3.util.retry import Retry
 from urllib3.exceptions import MaxRetryError
 from urllib3.response import HTTPResponse as URLLib3Rresponse
 
+from .pool import CURLHandlerPoolManager
+
 
 class CURLRequest(object):
     """Implementation of a request using PyCURL."""
 
-    def __init__(self):
+    def __init__(self, curl_handler=None):
         # The handler is exposed so that subclasses can use it.
-        self.curl_handler = pycurl.Curl()
+        if curl_handler:
+            self.curl_handler = curl_handler
+        else:
+            self.curl_handler = pycurl.Curl()
 
         self._response_headers = {}
         self._response_reason = None
-
-        # This configuration does not depend on the request itself, so
-        # we do it once here.
 
     def _reset(self):
         """Resets internal state of the request, leaving it ready for a new
@@ -288,13 +294,18 @@ class CURLRequest(object):
 class CURLAdapter(BaseAdapter):
     """A requests adapter implemented using PyCURL"""
 
-    def __init__(self, max_retries=DEFAULT_RETRIES):
+    def __init__(self, max_retries=DEFAULT_RETRIES, initial_pool_size=DEFAULT_POOLSIZE,
+                 max_pool_size=DEFAULT_POOLSIZE, pool_block=DEFAULT_POOLBLOCK):
         super(CURLAdapter, self).__init__()
 
         if max_retries == DEFAULT_RETRIES:
             self.max_retries = Retry(0, read=False)
         else:
             self.max_retries = Retry.from_int(max_retries)
+
+        self._pool_manager = CURLHandlerPoolManager(max_pool_size=max_pool_size,
+                                                    initial_pool_size=initial_pool_size,
+                                                    pool_block=pool_block)
 
     def send(self, request, stream=False, timeout=None, verify=True, cert=None,
              proxies=None):
@@ -316,7 +327,7 @@ class CURLAdapter(BaseAdapter):
             proxies (dict,  optional): Defaults to None. The proxies
                 dictionary to apply to the request.
         """
-        curl_request = CURLRequest()
+        curl_request = self.get_curl_request(request)
 
         retries = self.max_retries
 
@@ -330,10 +341,23 @@ class CURLAdapter(BaseAdapter):
                                             error=error)
                 retries.sleep()
 
+    def get_curl_request(self, request):
+        """Creates a new CURLRequests based on the given request.
+
+        Args:
+            request (PreparedRequest): the request being sent.
+
+        Returns:
+            CURLRequest: the new CURL-based request.
+        """
+
+        pool = self._pool_manager.get_pool_from_url(request.url)
+
+        return CURLRequest(pool.get_handler())
+
     def close(self):
         """Cleans up adapter specific items."""
-        # Nothing to clean yet
-        pass
+        self._pool_manager.clear()
 
 
 def translate_curl_exception(curl_exception):

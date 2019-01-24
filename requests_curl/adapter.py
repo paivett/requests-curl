@@ -3,12 +3,7 @@
 import six
 import pycurl
 
-from collections import deque
-from requests.exceptions import (
-    ConnectionError, ConnectTimeout, ReadTimeout, SSLError,
-    ProxyError, RetryError, InvalidSchema, InvalidProxyURL,
-    InvalidURL, RequestException
-)
+from requests.exceptions import RequestException
 from requests.structures import CaseInsensitiveDict
 from requests.utils import get_encoding_from_headers
 from requests.cookies import extract_cookies_to_jar
@@ -22,6 +17,7 @@ from urllib3.exceptions import MaxRetryError
 from urllib3.response import HTTPResponse as URLLib3Rresponse
 
 from .pool import CURLHandlerPoolManager
+from .error import translate_curl_exception
 
 
 class CURLRequest(object):
@@ -208,10 +204,10 @@ class CURLRequest(object):
                                                       six.BytesIO(body))
 
             return response
-        except pycurl.error as ex:
-            requests_exception = translate_curl_exception(ex)
+        except pycurl.error as curl_error:
+            requests_exception = translate_curl_exception(curl_error)
 
-            raise requests_exception
+            raise requests_exception("CURL error {0}".format(curl_error.args))
 
     def parse_header_line(self, header_line):
         """This method is the callback configured to parse each line of
@@ -331,15 +327,18 @@ class CURLAdapter(BaseAdapter):
 
         retries = self.max_retries
 
-        while not retries.is_exhausted():
-            try:
-                response = curl_request.send(request, stream=stream, timeout=timeout,
-                                             verify=verify, cert=cert)
-                return response
-            except RequestException as error:
-                retries = retries.increment(method=request.method, url=request.url,
-                                            error=error)
-                retries.sleep()
+        try:
+            while not retries.is_exhausted():
+                try:
+                    response = curl_request.send(request, stream=stream, timeout=timeout,
+                                                 verify=verify, cert=cert)
+                    return response
+                except RequestException as error:
+                    retries = retries.increment(method=request.method, url=request.url,
+                                                error=error)
+                    retries.sleep()
+        except MaxRetryError as retry_error:
+            raise retry_error.reason
 
     def get_curl_request(self, request):
         """Creates a new CURLRequests based on the given request.
@@ -358,20 +357,3 @@ class CURLAdapter(BaseAdapter):
     def close(self):
         """Cleans up adapter specific items."""
         self._pool_manager.clear()
-
-
-def translate_curl_exception(curl_exception):
-    """This function will make the best effort to translate a given PyCURL error
-    to a requests exception.
-
-    Args:
-        curl_exception (pycurl.error): PyCURL error to be translated.
-
-    Returns:
-        requests.exceptions.RequestException: the requests exception that
-            matches to the CURL error.
-    """
-
-    error_code, error_msg = curl_exception.args
-
-    return ConnectionError(error_msg)

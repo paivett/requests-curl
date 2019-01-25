@@ -77,8 +77,14 @@ class CURLRequest(object):
         # Finally, configure the appropiate method
         method = request.method.upper()
 
-        if request.method == "GET":
-            self.configure_method_get(request)
+        configure_functions = {
+            "GET": self.configure_method_get,
+            "DELETE": self.configure_method_delete
+        }
+
+        configure_method_func = configure_functions.get(request.method)
+        if configure_method_func:
+            configure_method_func(request)
         else:
             raise RuntimeError("Method '{0}' not supported".format(method))
 
@@ -92,6 +98,15 @@ class CURLRequest(object):
         # Do nothing, since for a GET, we need to configure nothing, it
         # is the default behaviour
         pass
+
+    def configure_method_delete(self, request):
+        """Configure the current request instance for a DELETE
+
+        Note:
+            This should not be called from user code. It is exposed to be
+            subclassed only.
+        """
+        self.curl_handler.setopt(pycurl.CUSTOMREQUEST, "DELETE")
 
     def configure_headers(self, request):
         """Configures the request headers.

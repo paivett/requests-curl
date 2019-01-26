@@ -80,7 +80,8 @@ class CURLRequest(object):
         configure_functions = {
             "GET": self.configure_method_get,
             "HEAD": self.configure_method_head,
-            "DELETE": self.configure_method_delete
+            "DELETE": self.configure_method_delete,
+            "OPTIONS": self.configure_method_options,
         }
 
         configure_method_func = configure_functions.get(request.method)
@@ -117,6 +118,16 @@ class CURLRequest(object):
             subclassed only.
         """
         self.curl_handler.setopt(pycurl.CUSTOMREQUEST, "HEAD")
+        self.curl_handler.setopt(pycurl.NOBODY, True)
+
+    def configure_method_options(self, request):
+        """Configure the current request instance for a OPTIONS
+
+        Note:
+            This should not be called from user code. It is exposed to be
+            subclassed only.
+        """
+        self.curl_handler.setopt(pycurl.CUSTOMREQUEST, "OPTIONS")
         self.curl_handler.setopt(pycurl.NOBODY, True)
 
     def configure_headers(self, request):

@@ -1,12 +1,13 @@
 import pycurl
+import re
 
 from requests.exceptions import (
     ConnectionError, ConnectTimeout, ReadTimeout, SSLError,
-    ProxyError, RetryError, InvalidSchema, InvalidProxyURL,
+    ProxyError, RetryError, InvalidProxyURL,
     InvalidURL, RequestException
 )
 
-PYCURL_SSL_ERRORS = (
+_PYCURL_SSL_ERRORS = {
     pycurl.E_SSL_CACERT,
     pycurl.E_SSL_CACERT_BADFILE,
     pycurl.E_SSL_CERTPROBLEM,
@@ -20,7 +21,45 @@ PYCURL_SSL_ERRORS = (
     pycurl.E_SSL_ISSUER_ERROR,
     pycurl.E_SSL_PEER_CERTIFICATE,
     pycurl.E_SSL_PINNEDPUBKEYNOTMATCH,
-    pycurl.E_SSL_SHUTDOWN_FAILED
+    pycurl.E_SSL_SHUTDOWN_FAILED,
+}
+
+
+_PYCURL_TIMEOUT_ERRORS = {
+    pycurl.E_OPERATION_TIMEOUTED,
+    pycurl.E_OPERATION_TIMEDOUT,
+}
+
+
+_PROXY_AUTH_ERR_PATTERN = re.compile(r"Received HTTP code \d{3} from proxy after CONNECT")
+
+
+def _to_ssl_error(error_code, error_msg):
+    if error_code in _PYCURL_SSL_ERRORS:
+        return SSLError
+
+
+def _to_proxy_error(error_code, error_msg):
+    is_proxy_error = error_code == pycurl.E_COULDNT_RESOLVE_PROXY or \
+                     _PROXY_AUTH_ERR_PATTERN.match(error_msg) is not None
+
+    if is_proxy_error:
+        return ProxyError
+
+
+def _to_timeout_error(error_code, error_msg):
+    if error_code in _PYCURL_TIMEOUT_ERRORS:
+        if error_msg.startswith("Connection timed out"):
+            return ConnectTimeout
+        else:
+            return ReadTimeout
+
+
+_ERROR_TRANSLATE_FUNCS = (
+    _to_ssl_error,
+    _to_proxy_error,
+    _to_timeout_error,
+
 )
 
 
@@ -37,11 +76,11 @@ def translate_curl_exception(curl_exception):
     """
 
     error_code, error_msg = curl_exception.args
+    default_error = ConnectionError
 
-    if error_code in PYCURL_SSL_ERRORS:
-        error_class = SSLError
-    else:
-        # This is kind of the default error
-        error_class = ConnectionError
+    for translate_func in _ERROR_TRANSLATE_FUNCS:
+        requests_error = translate_func(error_code, error_msg)
+        if requests_error is not None:
+            return requests_error
 
-    return error_class
+    return default_error

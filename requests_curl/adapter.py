@@ -69,7 +69,6 @@ class CURLRequest(object):
                                  self.parse_header_line)
         self.curl_handler.setopt(pycurl.URL, request.url)
 
-        self.configure_headers(request)
         self.configure_timeout(timeout)
         self.configure_cert(cert)
         self.configure_ca(verify)
@@ -82,6 +81,8 @@ class CURLRequest(object):
             "HEAD": self.configure_method_head,
             "DELETE": self.configure_method_delete,
             "OPTIONS": self.configure_method_options,
+            "PUT": self.configure_method_put,
+            "POST": self.configure_method_post
         }
 
         configure_method_func = configure_functions.get(request.method)
@@ -89,6 +90,8 @@ class CURLRequest(object):
             configure_method_func(request)
         else:
             raise RuntimeError("Method '{0}' not supported".format(method))
+
+        self.configure_headers(request)
 
     def configure_method_get(self, request):
         """Configure the current request instance for a GET
@@ -100,6 +103,35 @@ class CURLRequest(object):
         # Do nothing, since for a GET, we need to configure nothing, it
         # is the default behaviour
         pass
+
+    def configure_method_post(self, request):
+        """Configure the current request instance for a POST
+
+        Note:
+            This should not be called from user code. It is exposed to be
+            subclassed only.
+        """
+        self.curl_handler.setopt(pycurl.POST, True)
+        # self.curl_handler.setopt(pycurl.UPLOAD, True)
+        try:
+            # If a file-like object is provided, it is assumed that this is a
+            # chunked upload.
+            self.curl_handler.setopt(pycurl.READFUNCTION, request.body.read)
+            request.headers["Transfer-Encoding"] = "chunked"
+        except AttributeError:
+            # Assume a multipart form encoding
+            self.curl_handler.setopt(pycurl.POSTFIELDS, request.body)
+
+    def configure_method_put(self, request):
+        """Configure the current request instance for a PUT
+
+        Note:
+            This should not be called from user code. It is exposed to be
+            subclassed only.
+        """
+        self.configure_method_post(request)
+        self.curl_handler.setopt(pycurl.POST, False)
+        self.curl_handler.setopt(pycurl.PUT, True)
 
     def configure_method_delete(self, request):
         """Configure the current request instance for a DELETE

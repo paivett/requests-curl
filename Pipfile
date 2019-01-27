@@ -1,0 +1,14 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+pylint = "*"
+flake8 = "*"
+pytest = "*"
+
+[packages]
+pycurl = ">=7.43.0.2"
+requests = ">=2.18.0"
+six = ">=1.11.0"

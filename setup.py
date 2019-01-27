@@ -1,0 +1,30 @@
+from setuptools import setup
+
+setup(
+    name='requests_curl',
+    version='0.1',
+    packages=['requests_curl'],
+    install_requires=['requests>=2.0.0', 'pycurl>=7.43.0.2', 'six>=1.11.0'],
+    provides=['requests_curl'],
+    author='Santiago Pivetta',
+    author_email='santiago.pivetta@gmail.com',
+    url='https://github.com/paivett/requests-curl',
+    description='This package allows using requests library with pycurl as backend.',
+    license='MIT',
+    classifiers=[
+        'Development Status :: 3 - Alpha',
+        'Intended Audience :: Developers',
+        'Programming Language :: Python',
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'License :: OSI Approved :: MIT License',
+        'Operating System :: OS Independent',
+        'Natural Language :: English',
+        'Intended Audience :: Developers',
+    ],
+)

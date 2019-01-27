@@ -10,7 +10,7 @@ To be able to use this adapter, you need [PyCURL](http://pycurl.io), and, of cou
 
 Clone this project, and then, in the desired virtualenvironment, just run
 
-    python setup.py
+    python setup.py install
 
 [PyPI](https://pypi.org) integration comming soon.
 
@@ -43,3 +43,7 @@ Tests are implemented with pytest. To run tests, just do
 
  * 0.1
    * Initial release
+
+## Troubleshooting
+
+If you are having trouble installing PyCURL, check this: https://stackoverflow.com/a/51959349.

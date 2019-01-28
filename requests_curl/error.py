@@ -3,7 +3,7 @@ import re
 
 from requests.exceptions import (
     ConnectionError, ConnectTimeout, ReadTimeout, SSLError,
-    ProxyError, RetryError, InvalidProxyURL,
+    ProxyError, InvalidProxyURL,
     InvalidURL, RequestException
 )
 

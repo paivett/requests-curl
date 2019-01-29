@@ -94,7 +94,10 @@ class CURLRequest(object):
         self.configure_headers(request)
 
     def configure_method_get(self, request):
-        """Configure the current request instance for a GET
+        """Configure the current request instance for a GET.
+
+        Args:
+            request (PreparedRequest): the request being sent.
 
         Note:
             This should not be called from user code. It is exposed to be
@@ -106,6 +109,9 @@ class CURLRequest(object):
 
     def configure_method_post(self, request):
         """Configure the current request instance for a POST
+
+        Args:
+            request (PreparedRequest): the request being sent.
 
         Note:
             This should not be called from user code. It is exposed to be
@@ -125,6 +131,9 @@ class CURLRequest(object):
     def configure_method_put(self, request):
         """Configure the current request instance for a PUT
 
+        Args:
+            request (PreparedRequest): the request being sent.
+
         Note:
             This should not be called from user code. It is exposed to be
             subclassed only.
@@ -136,6 +145,9 @@ class CURLRequest(object):
     def configure_method_delete(self, request):
         """Configure the current request instance for a DELETE
 
+        Args:
+            request (PreparedRequest): the request being sent.
+
         Note:
             This should not be called from user code. It is exposed to be
             subclassed only.
@@ -144,6 +156,9 @@ class CURLRequest(object):
 
     def configure_method_head(self, request):
         """Configure the current request instance for a HEAD
+
+        Args:
+            request (PreparedRequest): the request being sent.
 
         Note:
             This should not be called from user code. It is exposed to be
@@ -154,6 +169,9 @@ class CURLRequest(object):
 
     def configure_method_options(self, request):
         """Configure the current request instance for a OPTIONS
+
+        Args:
+            request (PreparedRequest): the request being sent.
 
         Note:
             This should not be called from user code. It is exposed to be
@@ -167,6 +185,10 @@ class CURLRequest(object):
 
         Args:
             request (PreparedRequest): the request being sent.
+
+        Note:
+            This should not be called from user code. It is exposed to be
+            subclassed only.
         """
         headers = [
             "{name}: {value}".format(name=name, value=value)
@@ -178,14 +200,14 @@ class CURLRequest(object):
     def configure_timeout(self, timeout=None):
         """Configures the timeout of this curl request.
 
-        Note:
-            This should not be called from user code. It is exposed to be
-            subclassed only.
-
         Args:
             timeout (float, optional): Defaults to None. How long to wait for
                 the server to send data before giving up, as a float, or a
                 `(connect timeout, read timeout)` tuple.
+
+        Note:
+            This should not be called from user code. It is exposed to be
+            subclassed only.
         """
         if isinstance(timeout, (tuple, list)):
             conn_timeout, read_timeout = timeout
@@ -198,15 +220,15 @@ class CURLRequest(object):
     def configure_ca(self, verify=True):
         """Configures the timeout of this curl request.
 
-        Note:
-            This should not be called from user code. It is exposed to be
-            subclassed only.
-
         Args:
             verify (bool, optional): Defaults to True. Either a boolean, in
                 which case it controls whether we verify the server's TLS
                 certificate, or a string, in which case it must be a path
                 to a CA bundle to use.
+
+        Note:
+            This should not be called from user code. It is exposed to be
+            subclassed only.
         """
         if verify:
             self.curl_handler.setopt(pycurl.SSL_VERIFYHOST, 2)
@@ -225,6 +247,10 @@ class CURLRequest(object):
         Args:
             cert (str, optional): Defaults to None. Any user-provided SSL
                 certificate to be trusted.
+
+        Note:
+            This should not be called from user code. It is exposed to be
+            subclassed only.
         """
 
         if cert:
@@ -259,6 +285,11 @@ class CURLRequest(object):
 
         Raises:
             requests.exceptions.SSLError: if request failed due to a SSL error.
+            requests.exceptions.ProxyError: if request failed due to a proxy error.
+            requests.exceptions.ConnectTimeout: if request failed due to a connection timeout.
+            requests.exceptions.ReadTimeout: if request failed due to a read timeout.
+            requests.exceptions.ConnectionError: if there is a problem with the
+                connection (default error).
 
         Returns:
             request.Response: the response to the request.
@@ -282,12 +313,12 @@ class CURLRequest(object):
         """This method is the callback configured to parse each line of
         the response headers.
 
+        Args:
+            header_line (str): a line of the headers section.
+
         Note:
             This should not be called from user code. It is exposed to be
             subclassed only.
-
-        Args:
-            header_line (str): a line of the headers section.
         """
 
         # HTTP standard specifies that headers are encoded in iso-8859-1.
@@ -305,13 +336,13 @@ class CURLRequest(object):
     def add_response_header(self, name, value):
         """Adds a response header value to the internal response headers.
 
+        Args:
+            name (str): header field name.
+            value (str): header field value.
+
         Note:
             This should not be called from user code. It is exposed to be
             subclassed only.
-
-        Args:
-            name ([type]): [description]
-            value ([type]): [description]
         """
 
         self._response_headers[name] = value
@@ -320,7 +351,7 @@ class CURLRequest(object):
         """Creates a requests.Response instance to be returned after a curl request.
 
         Args:
-            request ([type]): [description]
+            request (PreparedRequest): the request being sent.
             body ([type]): [description]
 
         Returns:
@@ -391,6 +422,17 @@ class CURLAdapter(BaseAdapter):
                 certificate to be trusted.
             proxies (dict,  optional): Defaults to None. The proxies
                 dictionary to apply to the request.
+
+        Raises:
+            requests.exceptions.SSLError: if request failed due to a SSL error.
+            requests.exceptions.ProxyError: if request failed due to a proxy error.
+            requests.exceptions.ConnectTimeout: if request failed due to a connection timeout.
+            requests.exceptions.ReadTimeout: if request failed due to a read timeout.
+            requests.exceptions.ConnectionError: if there is a problem with the
+                connection (default error).
+
+        Returns:
+            request.Response: the response to the request.
         """
         curl_request = self.get_curl_request(request)
 

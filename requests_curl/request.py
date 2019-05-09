@@ -53,6 +53,7 @@ class CURLRequest(object):
         options.append((pycurl.URL, self._request.url))
         options.append(self.build_headers_option())
         options.extend(self.build_http_method_options())
+        options.extend(self.build_body_options())
         options.extend(self.build_timeout_options())
         options.extend(self.build_ca_options())
         options.extend(self.build_cert_options())
@@ -90,51 +91,49 @@ class CURLRequest(object):
             build_options_func = self.build_options_options
         elif method == "DELETE":
             build_options_func = self.build_delete_options
+        elif method == "PATCH":
+            build_options_func = self.build_patch_options
 
         return build_options_func()
 
-
     def build_get_options(self):
-        return []
+        return tuple()
 
     def build_head_options(self):
-        return (
-            (pycurl.CUSTOMREQUEST, "HEAD"),
-            (pycurl.NOBODY, True),
-        )
+        return ((pycurl.CUSTOMREQUEST, "HEAD"),)
 
     def build_delete_options(self):
         return ((pycurl.CUSTOMREQUEST, "DELETE"),)
 
     def build_options_options(self):
-            return (
-            (pycurl.CUSTOMREQUEST, "OPTIONS"),
-            (pycurl.NOBODY, True),
-        )
+            return ((pycurl.CUSTOMREQUEST, "OPTIONS"),)
+    
+    def build_patch_options(self):
+        return ((pycurl.CUSTOMREQUEST, "PATCH"),)
 
     def build_put_options(self):
-        if self.use_chunked_upload:
-            opt, value = pycurl.READFUNCTION, self._request.body.read
-        else:
-            opt, value = pycurl.POSTFIELDS, self._request.body
-
         return (
             (pycurl.POST, False),
             (pycurl.PUT, True),
-            (opt, value),
         )
 
     def build_post_options(self):
-        if self.use_chunked_upload:
-            opt, value = pycurl.READFUNCTION, self._request.body.read
-        else:
-            opt, value = pycurl.POSTFIELDS, self._request.body
-
         return (
             (pycurl.POST, True),
             (pycurl.PUT, False),
-            (opt, value),
         )
+
+    def build_body_options(self):
+        opt, value = pycurl.NOBODY, True
+
+        if self._request.body:
+            use_chunked_upload = hasattr(self._request.body, "read")
+            if use_chunked_upload:
+                opt, value = pycurl.READFUNCTION, self._request.body.read
+            else:
+                opt, value = pycurl.POSTFIELDS, self._request.body
+        
+        return ((opt, value),)
 
     def build_timeout_options(self):
         """Returns the curl timeout options."""

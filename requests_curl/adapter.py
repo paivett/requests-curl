@@ -68,7 +68,7 @@ class CURLAdapter(BaseAdapter):
         try:
             while not retries.is_exhausted():
                 try:
-                    response = self._curl_send(request)
+                    response = self.curl_send(request)
 
                     return response
 
@@ -80,7 +80,7 @@ class CURLAdapter(BaseAdapter):
         except MaxRetryError as retry_error:
             raise retry_error.reason
 
-    def _curl_send(self, request, stream=False, timeout=None, verify=True, cert=None,
+    def curl_send(self, request, stream=False, timeout=None, verify=True, cert=None,
                    proxies=None):
         """Translates the `requests.PreparedRequest` into a CURLRequest, performs the request, and then
         translates the repsonse to a `requests.Response`, and if there is any exception, it is also translated

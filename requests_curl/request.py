@@ -124,16 +124,20 @@ class CURLRequest(object):
         )
 
     def build_body_options(self):
-        opt, value = pycurl.NOBODY, True
+        if self._request.method == "HEAD":
+            # Body is not allowed for HEAD
+            return ((pycurl.NOBODY, True),)
 
-        if self._request.body:
+        elif self._request.body:
+            opt, value = pycurl.POSTFIELDS, self._request.body
+
             use_chunked_upload = hasattr(self._request.body, "read")
             if use_chunked_upload:
                 opt, value = pycurl.READFUNCTION, self._request.body.read
-            else:
-                opt, value = pycurl.POSTFIELDS, self._request.body
+
+            return ((opt, value),)
         
-        return ((opt, value),)
+        return tuple()
 
     def build_timeout_options(self):
         """Returns the curl timeout options."""

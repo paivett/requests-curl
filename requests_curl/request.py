@@ -7,7 +7,7 @@ from requests.adapters import DEFAULT_CA_BUNDLE_PATH
 class CURLRequest(object):
     """Representation of a request to be made using CURL."""
 
-    
+
 
     def __init__(self, request, timeout=None, verify=None, cert=None):
         """Initializes a CURL request from a given prepared request
@@ -64,7 +64,7 @@ class CURLRequest(object):
     def build_headers_option(self):
         """Returns a tuple with the pycurl option for the headers."""
         req_headers = self._request.headers.copy()
-        
+
         if self.use_chunked_upload:
             req_headers["Transfer-Encoding"] = "chunked"
 
@@ -107,14 +107,15 @@ class CURLRequest(object):
 
     def build_options_options(self):
             return ((pycurl.CUSTOMREQUEST, "OPTIONS"),)
-    
+
     def build_patch_options(self):
         return ((pycurl.CUSTOMREQUEST, "PATCH"),)
 
     def build_put_options(self):
         return (
-            (pycurl.POST, False),
-            (pycurl.PUT, True),
+            # (pycurl.POST, False),
+            # (pycurl.PUT, True),
+            (pycurl.CUSTOMREQUEST, "PUT"),
         )
 
     def build_post_options(self):
@@ -136,7 +137,7 @@ class CURLRequest(object):
                 opt, value = pycurl.READFUNCTION, self._request.body.read
 
             return ((opt, value),)
-        
+
         return tuple()
 
     def build_timeout_options(self):

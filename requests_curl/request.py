@@ -7,8 +7,6 @@ from requests.adapters import DEFAULT_CA_BUNDLE_PATH
 class CURLRequest(object):
     """Representation of a request to be made using CURL."""
 
-
-
     def __init__(self, request, timeout=None, verify=None, cert=None):
         """Initializes a CURL request from a given prepared request
 
@@ -30,7 +28,6 @@ class CURLRequest(object):
         self._verify = verify
         self._curl_options = None
 
-
     @property
     def use_chunked_upload(self):
         return hasattr(self._request.body, "read")
@@ -46,7 +43,6 @@ class CURLRequest(object):
 
         return self._curl_options
 
-
     def build_curl_options(self):
         options = []
 
@@ -59,7 +55,6 @@ class CURLRequest(object):
         options.extend(self.build_cert_options())
 
         return options
-
 
     def build_headers_option(self):
         """Returns a tuple with the pycurl option for the headers."""
@@ -74,7 +69,6 @@ class CURLRequest(object):
         ]
 
         return pycurl.HTTPHEADER, headers
-
 
     def build_http_method_options(self):
         method = self._request.method.upper()
@@ -106,23 +100,16 @@ class CURLRequest(object):
         return ((pycurl.CUSTOMREQUEST, "DELETE"),)
 
     def build_options_options(self):
-            return ((pycurl.CUSTOMREQUEST, "OPTIONS"),)
+        return ((pycurl.CUSTOMREQUEST, "OPTIONS"),)
 
     def build_patch_options(self):
         return ((pycurl.CUSTOMREQUEST, "PATCH"),)
 
     def build_put_options(self):
-        return (
-            # (pycurl.POST, False),
-            # (pycurl.PUT, True),
-            (pycurl.CUSTOMREQUEST, "PUT"),
-        )
+        return ((pycurl.CUSTOMREQUEST, "PUT"),)
 
     def build_post_options(self):
-        return (
-            (pycurl.POST, True),
-            (pycurl.PUT, False),
-        )
+        return ((pycurl.POST, True), (pycurl.PUT, False))
 
     def build_body_options(self):
         if self._request.method == "HEAD":
@@ -154,11 +141,14 @@ class CURLRequest(object):
         else:
             return tuple()
 
-
     def build_ca_options(self):
         """Configures the CA of this curl request."""
         if self._verify:
-            ca_info = self._verify if isinstance(self._verify, six.string_types) else DEFAULT_CA_BUNDLE_PATH
+            ca_info = (
+                self._verify
+                if isinstance(self._verify, six.string_types)
+                else DEFAULT_CA_BUNDLE_PATH
+            )
 
             return (
                 (pycurl.SSL_VERIFYHOST, 2),
@@ -166,10 +156,7 @@ class CURLRequest(object):
                 (pycurl.CAINFO, ca_info),
             )
         else:
-            return (
-                (pycurl.SSL_VERIFYHOST, 0),
-                (pycurl.SSL_VERIFYPEER, 0)
-            )
+            return ((pycurl.SSL_VERIFYHOST, 0), (pycurl.SSL_VERIFYPEER, 0))
 
     def build_cert_options(self):
         """Configures the SSL certificate of this curl request."""
@@ -180,9 +167,6 @@ class CURLRequest(object):
             else:
                 cert_path, key_path = self._cert
 
-            return (
-                (pycurl.SSLCERT, cert_path),
-                (pycurl.SSLKEY, key_path),
-            )
+            return ((pycurl.SSLCERT, cert_path), (pycurl.SSLKEY, key_path))
         else:
             return tuple()

@@ -1,4 +1,3 @@
-import pycurl
 import six
 
 from requests import Response as RequestResponse
@@ -12,8 +11,8 @@ class CURLResponse(object):
     """This class represents a CURL response"""
 
     def __init__(self, curl_request):
-        """Initializes a new response object
-        
+        """Initializes a new response object.
+
         Args:
             curl_request (CURLRequest): the request that originated this response.
         """
@@ -24,7 +23,6 @@ class CURLResponse(object):
         self.body = six.BytesIO()
         self.reason = None
         self.http_code = None
-
 
     def to_requests_response(self):
         """Returns an instance of `requests.Response` based on this response.

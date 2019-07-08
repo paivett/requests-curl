@@ -35,7 +35,7 @@ class CURLHandlerPool(object):
 
         Args:
             curl_request (CURLRequest): an instance of a given CURL request.
-        
+
         Returns:
             CURLResponse: the response of the request.
 
@@ -82,8 +82,10 @@ class CURLHandlerPool(object):
             return curl_handler
 
         except queue.Empty:
-            raise EmptyPool("Pool reached maximum size and no more connections are allowed.")
-        
+            raise EmptyPool(
+                "Pool reached maximum size and no more connections are allowed."
+            )
+
         except AttributeError:
             raise ClosedPool("Pool is no longer available")
 
@@ -95,7 +97,7 @@ class CURLHandlerPool(object):
         """
         try:
             self._pool.put(curl_handler, block=False)
-        
+
         except AttributeError:
             pass  # Pool was closed
 
@@ -121,15 +123,18 @@ class CURLHandlerPool(object):
 def _get_curl_options_for_response(response):
     return (
         (pycurl.HEADERFUNCTION, response.parse_header_line),
-        (pycurl.WRITEFUNCTION, response.body.write)
+        (pycurl.WRITEFUNCTION, response.body.write),
     )
 
 
 class CURLHandlerPoolManager(object):
-
     def __init__(self, initial_pool_size, max_pool_size, pool_block):
-        self._poolmanager = PoolManager(num_pools=initial_pool_size, maxsize=max_pool_size,
-                                        block=pool_block, strict=True)
+        self._poolmanager = PoolManager(
+            num_pools=initial_pool_size,
+            maxsize=max_pool_size,
+            block=pool_block,
+            strict=True,
+        )
 
         # Let's force the poolmanager to use our CURLHandlerPool instead of the original
         # HTTPConnectionPool

@@ -2,9 +2,14 @@ import pycurl
 import re
 
 from requests.exceptions import (
-    ConnectionError, ConnectTimeout, ReadTimeout, SSLError,
-    ProxyError, InvalidProxyURL,
-    InvalidURL, RequestException
+    ConnectionError,
+    ConnectTimeout,
+    ReadTimeout,
+    SSLError,
+    ProxyError,
+    InvalidProxyURL,
+    InvalidURL,
+    RequestException,
 )
 
 _PYCURL_SSL_ERRORS = {
@@ -25,13 +30,12 @@ _PYCURL_SSL_ERRORS = {
 }
 
 
-_PYCURL_TIMEOUT_ERRORS = {
-    pycurl.E_OPERATION_TIMEOUTED,
-    pycurl.E_OPERATION_TIMEDOUT,
-}
+_PYCURL_TIMEOUT_ERRORS = {pycurl.E_OPERATION_TIMEOUTED, pycurl.E_OPERATION_TIMEDOUT}
 
 
-_PROXY_AUTH_ERR_PATTERN = re.compile(r"Received HTTP code \d{3} from proxy after CONNECT")
+_PROXY_AUTH_ERR_PATTERN = re.compile(
+    r"Received HTTP code \d{3} from proxy after CONNECT"
+)
 
 
 def _to_ssl_error(error_code, error_msg):
@@ -40,8 +44,10 @@ def _to_ssl_error(error_code, error_msg):
 
 
 def _to_proxy_error(error_code, error_msg):
-    is_proxy_error = error_code == pycurl.E_COULDNT_RESOLVE_PROXY or \
-                     _PROXY_AUTH_ERR_PATTERN.match(error_msg) is not None
+    is_proxy_error = (
+        error_code == pycurl.E_COULDNT_RESOLVE_PROXY
+        or _PROXY_AUTH_ERR_PATTERN.match(error_msg) is not None
+    )
 
     if is_proxy_error:
         return ProxyError
@@ -55,12 +61,7 @@ def _to_timeout_error(error_code, error_msg):
             return ReadTimeout
 
 
-_ERROR_TRANSLATE_FUNCS = (
-    _to_ssl_error,
-    _to_proxy_error,
-    _to_timeout_error,
-
-)
+_ERROR_TRANSLATE_FUNCS = (_to_ssl_error, _to_proxy_error, _to_timeout_error)
 
 
 def translate_curl_exception(curl_exception):

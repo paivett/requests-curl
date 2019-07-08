@@ -4,10 +4,11 @@ import pycurl
 
 from requests.exceptions import RequestException
 from requests.adapters import (
-    BaseAdapter, DEFAULT_CA_BUNDLE_PATH, DEFAULT_RETRIES,
-    DEFAULT_POOLSIZE, DEFAULT_POOLBLOCK
+    BaseAdapter,
+    DEFAULT_RETRIES,
+    DEFAULT_POOLSIZE,
+    DEFAULT_POOLBLOCK,
 )
-from requests import Response as RequestResponse
 from urllib3.util.retry import Retry
 from urllib3.exceptions import MaxRetryError
 
@@ -19,8 +20,13 @@ from .request import CURLRequest
 class CURLAdapter(BaseAdapter):
     """A requests adapter implemented using PyCURL"""
 
-    def __init__(self, max_retries=DEFAULT_RETRIES, initial_pool_size=DEFAULT_POOLSIZE,
-                 max_pool_size=DEFAULT_POOLSIZE, pool_block=DEFAULT_POOLBLOCK):
+    def __init__(
+        self,
+        max_retries=DEFAULT_RETRIES,
+        initial_pool_size=DEFAULT_POOLSIZE,
+        max_pool_size=DEFAULT_POOLSIZE,
+        pool_block=DEFAULT_POOLBLOCK,
+    ):
         super(CURLAdapter, self).__init__()
 
         if max_retries == DEFAULT_RETRIES:
@@ -28,12 +34,15 @@ class CURLAdapter(BaseAdapter):
         else:
             self.max_retries = Retry.from_int(max_retries)
 
-        self._pool_manager = CURLHandlerPoolManager(max_pool_size=max_pool_size,
-                                                    initial_pool_size=initial_pool_size,
-                                                    pool_block=pool_block)
+        self._pool_manager = CURLHandlerPoolManager(
+            max_pool_size=max_pool_size,
+            initial_pool_size=initial_pool_size,
+            pool_block=pool_block,
+        )
 
-    def send(self, request, stream=False, timeout=None, verify=True, cert=None,
-             proxies=None):
+    def send(
+        self, request, stream=False, timeout=None, verify=True, cert=None, proxies=None
+    ):
         """Sends PreparedRequest object using PyCURL. Returns Response object.
 
         Args:
@@ -73,26 +82,30 @@ class CURLAdapter(BaseAdapter):
                     return response
 
                 except RequestException as error:
-                    retries = retries.increment(method=request.method, url=request.url,
-                                                error=error)
+                    retries = retries.increment(
+                        method=request.method, url=request.url, error=error
+                    )
                     retries.sleep()
 
         except MaxRetryError as retry_error:
             raise retry_error.reason
 
-    def curl_send(self, request, stream=False, timeout=None, verify=True, cert=None,
-                   proxies=None):
+    def curl_send(
+        self, request, stream=False, timeout=None, verify=True, cert=None, proxies=None
+    ):
         """Translates the `requests.PreparedRequest` into a CURLRequest, performs the request, and then
-        translates the repsonse to a `requests.Response`, and if there is any exception, it is also translated
-        into an appropiate `requests.exceptions.RequestException` subclass."""
+        translates the repsonse to a `requests.Response`, and if there is any exception, it is also
+        translated into an appropiate `requests.exceptions.RequestException` subclass."""
         try:
             curl_connection = self.get_curl_connection(request.url)
-            curl_request = CURLRequest(request, timeout=timeout, cert=cert, verify=verify)
-            
+            curl_request = CURLRequest(
+                request, timeout=timeout, cert=cert, verify=verify
+            )
+
             response = curl_connection.send(curl_request)
-            
+
             return response.to_requests_response()
-        
+
         except pycurl.error as curl_error:
             requests_exception = translate_curl_exception(curl_error)
             raise requests_exception("CURL error {0}".format(curl_error.args))

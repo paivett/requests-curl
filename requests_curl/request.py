@@ -1,3 +1,4 @@
+import os
 import six
 import pycurl
 
@@ -144,16 +145,20 @@ class CURLRequest(object):
     def build_ca_options(self):
         """Configures the CA of this curl request."""
         if self._verify:
-            ca_info = (
+            ca_value = (
                 self._verify
                 if isinstance(self._verify, six.string_types)
                 else DEFAULT_CA_BUNDLE_PATH
             )
 
+            # Requests allows the verify parameter to be a file or a directory. This requires
+            # a different CURL option for each case
+            ca_opt = pycurl.CAPATH if os.path.isdir(self._verify) else pycurl.CAINFO
+
             return (
                 (pycurl.SSL_VERIFYHOST, 2),
                 (pycurl.SSL_VERIFYPEER, 2),
-                (pycurl.CAINFO, ca_info),
+                (ca_opt, ca_value),
             )
         else:
             return ((pycurl.SSL_VERIFYHOST, 0), (pycurl.SSL_VERIFYPEER, 0))

@@ -153,7 +153,7 @@ class CURLRequest(object):
 
             # Requests allows the verify parameter to be a file or a directory. This requires
             # a different CURL option for each case
-            ca_opt = pycurl.CAPATH if os.path.isdir(self._verify) else pycurl.CAINFO
+            ca_opt = pycurl.CAPATH if os.path.isdir(ca_value) else pycurl.CAINFO
 
             return (
                 (pycurl.SSL_VERIFYHOST, 2),

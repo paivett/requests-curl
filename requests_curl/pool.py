@@ -21,7 +21,7 @@ class ClosedPool(PoolException):
 class CURLHandlerPool(object):
     """Thread-safe connection pool for one host. Tries to emulate HTTPConnectionPool."""
 
-    def __init__(self, url, port, maxsize=1, *args, **kwargs):
+    def __init__(self, url, port, maxsize=1, **kwargs):
         self._block = kwargs.get("block", False)
         self._pool = queue.LifoQueue(maxsize)
 
@@ -120,6 +120,26 @@ class CURLHandlerPool(object):
             pass  # Done.
 
 
+class ProxyCURLHandlerPool(CURLHandlerPool):
+
+    def __init__(self, proxy_url, url, port, maxsize=1, **kwargs):
+        super(ProxyCURLHandlerPool, self).__init__(url, port, maxsize=maxsize, **kwargs)
+
+        self._proxy_url = proxy_url
+
+    def get_additional_curl_options(self):
+        options = [
+            (pycurl.PROXY, self._proxy_url.host),
+            (pycurl.PROXYAUTH, pycurl.HTTPAUTH_ANY),
+            (pycurl.PROXYUSERPWD, self._proxy_url.auth),
+        ]
+
+        if self._proxy_url.port:
+            options.append((pycurl.PROXYPORT, self._proxy_url.port))
+
+        return options
+
+
 def _get_curl_options_for_response(response):
     return (
         (pycurl.HEADERFUNCTION, response.parse_header_line),
@@ -128,7 +148,7 @@ def _get_curl_options_for_response(response):
 
 
 class CURLHandlerPoolManager(object):
-    def __init__(self, initial_pool_size, max_pool_size, pool_block):
+    def __init__(self, initial_pool_size, max_pool_size, pool_block, pool_constructor):
         self._poolmanager = PoolManager(
             num_pools=initial_pool_size,
             maxsize=max_pool_size,
@@ -139,8 +159,8 @@ class CURLHandlerPoolManager(object):
         # Let's force the poolmanager to use our CURLHandlerPool instead of the original
         # HTTPConnectionPool
         self._poolmanager.pool_classes_by_scheme = {
-            "http": CURLHandlerPool,
-            "https": CURLHandlerPool,
+            "http": pool_constructor,
+            "https": pool_constructor,
         }
 
     def get_pool_from_url(self, url):

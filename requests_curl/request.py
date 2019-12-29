@@ -118,7 +118,7 @@ class CURLRequest(object):
             return ((pycurl.NOBODY, True),)
 
         elif self._request.body:
-            opt, value = pycurl.POSTFIELDS, self._request.body
+            opt, value = pycurl.POSTFIELDS, six.ensure_binary(self._request.body)
 
             use_chunked_upload = hasattr(self._request.body, "read")
             if use_chunked_upload:

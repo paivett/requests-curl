@@ -12,4 +12,4 @@ black = "*"
 [packages]
 pycurl = ">=7.43.0.2"
 requests = ">=2.18.0"
-six = ">=1.11.0"
+six = ">=1.13.0"

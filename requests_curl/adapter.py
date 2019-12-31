@@ -58,9 +58,9 @@ class CURLAdapter(BaseAdapter):
             request (PreparedRequest): the request being sent.
             stream (bool, optional): Defaults to False. Whether to stream the
                 request content.
-            timeout (float, optional): Defaults to None. How long to wait for
-                the server to send data before giving up, as a float, or a
-                `(connect timeout, read timeout)` tuple.
+            timeout (float, optional): Defaults to None. How many seconds to
+                wait for the server to send data before giving up, as a float,
+                or a `(connect timeout, read timeout)` tuple.
             verify (bool, optional): Defaults to True. Either a boolean, in
                 which case it controls whether we verify the server's TLS
                 certificate, or a string, in which case it must be a path

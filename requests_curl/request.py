@@ -13,9 +13,9 @@ class CURLRequest(object):
 
         Args:
             request (PreparedRequest): the prepared request comming from `requests` library.
-            timeout (float, optional): Defaults to None. How long to wait for
-                the server to send data before giving up, as a float, or a
-                `(connect timeout, read timeout)` tuple.
+            timeout (float, optional): Defaults to None. How many seconds to
+                wait for the server to send data before giving up, as a float,
+                or a `(connect timeout, read timeout)` tuple.
             verify (bool, optional): Defaults to True. Either a boolean, in
                 which case it controls whether we verify the server's TLS
                 certificate, or a string, in which case it must be a path
@@ -111,11 +111,11 @@ class CURLRequest(object):
             conn_timeout, read_timeout = self._timeout
             total_timeout = conn_timeout + read_timeout
             return (
-                (pycurl.TIMEOUT_MS, int(total_timeout)),
-                (pycurl.CONNECTTIMEOUT_MS, int(conn_timeout)),
+                (pycurl.TIMEOUT_MS, int(1000 * total_timeout)),
+                (pycurl.CONNECTTIMEOUT_MS, int(1000 * conn_timeout)),
             )
         elif self._timeout:
-            return ((pycurl.TIMEOUT_MS, int(self._timeout)),)
+            return ((pycurl.TIMEOUT_MS, int(1000 * self._timeout)),)
         else:
             return tuple()
 

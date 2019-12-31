@@ -121,7 +121,6 @@ class CURLHandlerPool(object):
 
 
 class ProxyCURLHandlerPool(CURLHandlerPool):
-
     def __init__(self, proxy_url, url, port, maxsize=1, **kwargs):
         super(ProxyCURLHandlerPool, self).__init__(url, port, maxsize=maxsize, **kwargs)
 

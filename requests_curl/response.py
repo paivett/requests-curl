@@ -40,7 +40,7 @@ class CURLResponse(object):
             status=self.http_code,
             request_method=self.request.method,
             reason=self.reason,
-            preload_content=False
+            preload_content=False,
         )
 
         response = RequestResponse()
@@ -69,13 +69,13 @@ class CURLResponse(object):
         """
 
         # HTTP standard specifies that headers are encoded in iso-8859-1.
-        header_line = header_line.decode('iso-8859-1')
+        header_line = header_line.decode("iso-8859-1")
 
         # Header lines include the first status line (HTTP/1.x ...).
         # We are going to ignore all lines that don't have a colon in them.
         # This will botch headers that are split on multiple lines...
-        if ':' not in header_line:
+        if ":" not in header_line:
             return
 
-        name, value = header_line.split(':', 1)
+        name, value = header_line.split(":", 1)
         self.headers[name.strip()] = value.strip()

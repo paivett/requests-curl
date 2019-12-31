@@ -95,7 +95,9 @@ class CURLRequest(object):
                 if hasattr(self._request.body, "read"):
                     self._body_stream = self._request.body
                 else:
-                    self._body_stream = six.BytesIO(six.ensure_binary(self._request.body))
+                    self._body_stream = six.BytesIO(
+                        six.ensure_binary(self._request.body)
+                    )
 
                 return (
                     (pycurl.UPLOAD, True),

@@ -44,7 +44,7 @@ class CURLAdapter(BaseAdapter):
             max_pool_size=max_pool_size,
             initial_pool_size=initial_pool_size,
             pool_block=pool_block,
-            pool_constructor=CURLHandlerPool
+            pool_constructor=CURLHandlerPool,
         )
 
         self._proxy_pool_managers = {}
@@ -86,8 +86,14 @@ class CURLAdapter(BaseAdapter):
         try:
             while not retries.is_exhausted():
                 try:
-                    response = self.curl_send(request, stream=stream, timeout=timeout,
-                                              verify=verify, cert=cert, proxies=proxies)
+                    response = self.curl_send(
+                        request,
+                        stream=stream,
+                        timeout=timeout,
+                        verify=verify,
+                        cert=cert,
+                        proxies=proxies,
+                    )
 
                     return response
 
@@ -133,11 +139,13 @@ class CURLAdapter(BaseAdapter):
         proxy = select_proxy(url, proxies)
 
         if proxy:
-            proxy = prepend_scheme_if_needed(proxy, 'http')
+            proxy = prepend_scheme_if_needed(proxy, "http")
             proxy_url = parse_url(proxy)
             if not proxy_url.host:
-                raise InvalidProxyURL("Please check proxy URL. It is malformed"
-                                      " and could be missing the host.")
+                raise InvalidProxyURL(
+                    "Please check proxy URL. It is malformed"
+                    " and could be missing the host."
+                )
             proxy_pool_manager = self.proxy_pool_manager_for(proxy_url)
             pool = proxy_pool_manager.get_pool_from_url(url)
         else:
@@ -149,14 +157,17 @@ class CURLAdapter(BaseAdapter):
         if str(proxy_url) in self._proxy_pool_managers:
             pool_manager = self._proxy_pool_managers[str(proxy_url)]
         else:
+
             def pool_constructor(url, port, maxsize=1, **kwargs):
-                return ProxyCURLHandlerPool(proxy_url, url, port, maxsize=maxsize, **kwargs)
+                return ProxyCURLHandlerPool(
+                    proxy_url, url, port, maxsize=maxsize, **kwargs
+                )
 
             pool_manager = CURLHandlerPoolManager(
                 max_pool_size=self._max_pool_size,
                 initial_pool_size=self._initial_pool_size,
                 pool_block=self._pool_block,
-                pool_constructor=pool_constructor
+                pool_constructor=pool_constructor,
             )
 
             self._proxy_pool_managers[str(proxy_url)] = pool_manager

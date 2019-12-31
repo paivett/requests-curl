@@ -28,6 +28,7 @@ class CURLRequest(object):
         self._cert = cert
         self._verify = verify
         self._curl_options = None
+        self._body_stream = None
 
     @property
     def use_chunked_upload(self):
@@ -40,17 +41,20 @@ class CURLRequest(object):
     @property
     def options(self):
         if self._curl_options is None:
-            self._curl_options = self.build_curl_options()
+            self._curl_options = self._build_curl_options()
 
         return self._curl_options
 
-    def build_curl_options(self):
+    def _build_curl_options(self):
         options = []
 
         options.append((pycurl.URL, self._request.url))
         options.append(self.build_headers_option())
-        options.extend(self.build_http_method_options())
         options.extend(self.build_body_options())
+        # HTTP method must come after the body options since
+        # we may need to overwrite the method being used, for example
+        # when using post but uploading binary data
+        options.extend(self.build_http_method_options())
         options.extend(self.build_timeout_options())
         options.extend(self.build_ca_options())
         options.extend(self.build_cert_options())
@@ -60,9 +64,6 @@ class CURLRequest(object):
     def build_headers_option(self):
         """Returns a tuple with the pycurl option for the headers."""
         req_headers = self._request.headers.copy()
-
-        if self.use_chunked_upload:
-            req_headers["Transfer-Encoding"] = "chunked"
 
         headers = [
             "{name}: {value}".format(name=name, value=value)
@@ -75,42 +76,9 @@ class CURLRequest(object):
         method = self._request.method.upper()
 
         if method == "GET":
-            build_options_func = self.build_get_options
-        elif method == "POST":
-            build_options_func = self.build_post_options
-        elif method == "PUT":
-            build_options_func = self.build_put_options
-        elif method == "HEAD":
-            build_options_func = self.build_head_options
-        elif method == "OPTIONS":
-            build_options_func = self.build_options_options
-        elif method == "DELETE":
-            build_options_func = self.build_delete_options
-        elif method == "PATCH":
-            build_options_func = self.build_patch_options
-
-        return build_options_func()
-
-    def build_get_options(self):
-        return tuple()
-
-    def build_head_options(self):
-        return ((pycurl.CUSTOMREQUEST, "HEAD"),)
-
-    def build_delete_options(self):
-        return ((pycurl.CUSTOMREQUEST, "DELETE"),)
-
-    def build_options_options(self):
-        return ((pycurl.CUSTOMREQUEST, "OPTIONS"),)
-
-    def build_patch_options(self):
-        return ((pycurl.CUSTOMREQUEST, "PATCH"),)
-
-    def build_put_options(self):
-        return ((pycurl.CUSTOMREQUEST, "PUT"),)
-
-    def build_post_options(self):
-        return ((pycurl.POST, True), (pycurl.PUT, False))
+            return tuple()
+        else:
+            return ((pycurl.CUSTOMREQUEST, method),)
 
     def build_body_options(self):
         if self._request.method == "HEAD":
@@ -118,15 +86,24 @@ class CURLRequest(object):
             return ((pycurl.NOBODY, True),)
 
         elif self._request.body:
-            opt, value = pycurl.POSTFIELDS, six.ensure_binary(self._request.body)
+            content_type = self._request.headers.get("Content-Type", "").lower()
+            is_encoded_form = content_type == "application/x-www-form-urlencoded"
 
-            use_chunked_upload = hasattr(self._request.body, "read")
-            if use_chunked_upload:
-                opt, value = pycurl.READFUNCTION, self._request.body.read
+            if is_encoded_form:
+                return ((pycurl.POSTFIELDS, self._request.body),)
+            else:
+                if hasattr(self._request.body, "read"):
+                    self._body_stream = self._request.body
+                else:
+                    self._body_stream = six.BytesIO(six.ensure_binary(self._request.body))
 
-            return ((opt, value),)
+                return (
+                    (pycurl.UPLOAD, True),
+                    (pycurl.READFUNCTION, self._body_stream.read),
+                )
 
-        return tuple()
+        else:
+            return tuple()
 
     def build_timeout_options(self):
         """Returns the curl timeout options."""

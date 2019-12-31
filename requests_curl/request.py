@@ -146,9 +146,9 @@ class CURLRequest(object):
         if self._cert:
             if isinstance(self._cert, six.string_types):
                 cert_path = self._cert
+                return ((pycurl.SSLCERT, cert_path),)
             else:
                 cert_path, key_path = self._cert
-
-            return ((pycurl.SSLCERT, cert_path), (pycurl.SSLKEY, key_path))
+                return ((pycurl.SSLCERT, cert_path), (pycurl.SSLKEY, key_path))
         else:
             return tuple()

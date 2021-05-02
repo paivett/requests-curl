@@ -10,7 +10,7 @@ setup(
     author_email='santiago.pivetta@gmail.com',
     url='https://github.com/paivett/requests-curl',
     description='This package allows using requests library with pycurl as backend.',
-    license='MIT',
+    license='Unlicense',
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
@@ -22,7 +22,7 @@ setup(
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
-        'License :: OSI Approved :: MIT License',
+        'License :: OSI Approved :: The Unlicense (Unlicense)',
         'Operating System :: OS Independent',
         'Natural Language :: English',
         'Intended Audience :: Developers',

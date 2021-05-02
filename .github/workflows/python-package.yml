@@ -30,7 +30,7 @@ jobs:
         pip install flake8 pytest
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         # curl and pycurl
-        sudo apt-get install libcurl-dev
+        sudo apt-get install libcurl4-openssl-dev
         pip install .
     - name: Lint with flake8
       run: |

@@ -73,7 +73,8 @@ class CURLRequest(object):
         return pycurl.HTTPHEADER, headers
 
     def build_http_method_options(self):
-        method = self._request.method.upper()
+        method = self._request.method
+        method = method.upper() if method else "GET"
 
         if method == "GET":
             return tuple()

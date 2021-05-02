@@ -21,7 +21,7 @@ Simply import the adapter and mount it
 ```python
 import requests
 
-from requests_curl.adapter import CURLAdapter
+from requests_curl import CURLAdapter
 
 session = requests.Session()
 

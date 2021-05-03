@@ -46,23 +46,24 @@ class CURLRequest(object):
         return self._curl_options
 
     def _build_curl_options(self):
-        options = []
+        options = {
+            pycurl.URL: self._request.url,
+        }
 
-        options.append((pycurl.URL, self._request.url))
-        options.append(self.build_headers_option())
-        options.extend(self.build_body_options())
+        options.update(self.build_headers_option())
+        options.update(self.build_body_options())
         # HTTP method must come after the body options since
         # we may need to overwrite the method being used, for example
         # when using post but uploading binary data
-        options.extend(self.build_http_method_options())
-        options.extend(self.build_timeout_options())
-        options.extend(self.build_ca_options())
-        options.extend(self.build_cert_options())
+        options.update(self.build_http_method_options())
+        options.update(self.build_timeout_options())
+        options.update(self.build_ca_options())
+        options.update(self.build_cert_options())
 
         return options
 
     def build_headers_option(self):
-        """Returns a tuple with the pycurl option for the headers."""
+        """Returns a dict with the pycurl option for the headers."""
         req_headers = self._request.headers.copy()
 
         headers = [
@@ -70,28 +71,28 @@ class CURLRequest(object):
             for name, value in six.iteritems(req_headers)
         ]
 
-        return pycurl.HTTPHEADER, headers
+        return { pycurl.HTTPHEADER: headers }
 
     def build_http_method_options(self):
         method = self._request.method
         method = method.upper() if method else "GET"
 
         if method == "GET":
-            return tuple()
+            return {}
         else:
-            return ((pycurl.CUSTOMREQUEST, method),)
+            return { pycurl.CUSTOMREQUEST: method }
 
     def build_body_options(self):
         if self._request.method == "HEAD":
             # Body is not allowed for HEAD
-            return ((pycurl.NOBODY, True),)
+            return { pycurl.NOBODY: True }
 
         elif self._request.body:
             content_type = self._request.headers.get("Content-Type", "").lower()
             is_encoded_form = content_type == "application/x-www-form-urlencoded"
 
             if is_encoded_form:
-                return ((pycurl.POSTFIELDS, self._request.body),)
+                return { pycurl.POSTFIELDS: self._request.body }
             else:
                 if hasattr(self._request.body, "read"):
                     self._body_stream = self._request.body
@@ -100,27 +101,27 @@ class CURLRequest(object):
                         six.ensure_binary(self._request.body)
                     )
 
-                return (
-                    (pycurl.UPLOAD, True),
-                    (pycurl.READFUNCTION, self._body_stream.read),
-                )
+                return {
+                    pycurl.UPLOAD: True,
+                    pycurl.READFUNCTION: self._body_stream.read,
+                }
 
         else:
-            return tuple()
+            return {}
 
     def build_timeout_options(self):
         """Returns the curl timeout options."""
         if isinstance(self._timeout, (tuple, list)):
             conn_timeout, read_timeout = self._timeout
             total_timeout = conn_timeout + read_timeout
-            return (
-                (pycurl.TIMEOUT_MS, int(1000 * total_timeout)),
-                (pycurl.CONNECTTIMEOUT_MS, int(1000 * conn_timeout)),
-            )
+            return {
+                pycurl.TIMEOUT_MS: int(1000 * total_timeout),
+                pycurl.CONNECTTIMEOUT_MS: int(1000 * conn_timeout),
+            }
         elif self._timeout:
-            return ((pycurl.TIMEOUT_MS, int(1000 * self._timeout)),)
+            return { pycurl.TIMEOUT_MS: int(1000 * self._timeout) }
         else:
-            return tuple()
+            return {}
 
     def build_ca_options(self):
         """Configures the CA of this curl request."""
@@ -135,13 +136,16 @@ class CURLRequest(object):
             # a different CURL option for each case
             ca_opt = pycurl.CAPATH if os.path.isdir(ca_value) else pycurl.CAINFO
 
-            return (
-                (pycurl.SSL_VERIFYHOST, 2),
-                (pycurl.SSL_VERIFYPEER, 2),
-                (ca_opt, ca_value),
-            )
+            return {
+                pycurl.SSL_VERIFYHOST: 2,
+                pycurl.SSL_VERIFYPEER: 2,
+                ca_opt: ca_value,
+            }
         else:
-            return ((pycurl.SSL_VERIFYHOST, 0), (pycurl.SSL_VERIFYPEER, 0))
+            return {
+                pycurl.SSL_VERIFYHOST: 0,
+                pycurl.SSL_VERIFYPEER: 0,
+            }
 
     def build_cert_options(self):
         """Configures the SSL certificate of this curl request."""
@@ -149,9 +153,12 @@ class CURLRequest(object):
         if self._cert:
             if isinstance(self._cert, six.string_types):
                 cert_path = self._cert
-                return ((pycurl.SSLCERT, cert_path),)
+                return { pycurl.SSLCERT: cert_path }
             else:
                 cert_path, key_path = self._cert
-                return ((pycurl.SSLCERT, cert_path), (pycurl.SSLKEY, key_path))
+                return {
+                    pycurl.SSLCERT: cert_path,
+                    pycurl.SSLKEY: key_path,
+                }
         else:
-            return tuple()
+            return {}

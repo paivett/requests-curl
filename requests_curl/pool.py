@@ -49,9 +49,9 @@ class CURLHandlerPool(object):
         response = CURLResponse(curl_request)
 
         curl_options = curl_request.options
-        curl_options.extend(_get_curl_options_for_response(response))
-        curl_options.extend(self.get_additional_curl_options())
-        for option, value in curl_options:
+        curl_options.update(_get_curl_options_for_response(response))
+        curl_options.update(self.get_additional_curl_options())
+        for option, value in curl_options.items():
             curl_handler.setopt(option, value)
 
         curl_handler.perform()
@@ -63,7 +63,7 @@ class CURLHandlerPool(object):
         return response
 
     def get_additional_curl_options(self):
-        return []
+        return {}
 
     def get_handler_from_pool(self):
         """Get a CURL handler. Will return a pooled handler if one is available.
@@ -140,10 +140,10 @@ class ProxyCURLHandlerPool(CURLHandlerPool):
 
 
 def _get_curl_options_for_response(response):
-    return (
-        (pycurl.HEADERFUNCTION, response.parse_header_line),
-        (pycurl.WRITEFUNCTION, response.body.write),
-    )
+    return {
+        pycurl.HEADERFUNCTION: response.parse_header_line,
+        pycurl.WRITEFUNCTION: response.body.write,
+    }
 
 
 class CURLHandlerPoolManager(object):

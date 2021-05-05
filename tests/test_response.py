@@ -70,15 +70,27 @@ def test_curl_response_with_data_and_headers_to_request_response():
 
 @pytest.mark.parametrize("header_lines, expected_headers", (
     (
-        ["Content-Language: en-US",],
+        [
+            "HTTP/1.1 200 OK\n",
+            "Content-Language: en-US\n",
+        ],
         {"Content-Language": "en-US",},
     ),
     (
-        ["Content-Language: en-US", "Cache-Control: no-cache",],
+        [
+            "HTTP/1.1 200 OK\n",
+            "Content-Language: en-US\n",
+            "Cache-Control: no-cache\n",
+        ],
         {"Content-Language": "en-US", "Cache-Control": "no-cache",},
     ),
     (
-        ["Content-Language: en-US", "not-a-header", "Cache-Control: no-cache",],
+        [
+            "HTTP/1.1 200 OK\n",
+            "Content-Language: en-US\n",
+            "not-a-header\n",
+            "Cache-Control: no-cache\n"
+        ],
         {"Content-Language": "en-US", "Cache-Control": "no-cache",},
     ),
 ))
@@ -98,3 +110,34 @@ def test_curl_response_parse_header_line(header_lines, expected_headers):
         response.parse_header_line(header_line.encode("iso-8859-1"))
     
     assert sorted(response.headers.items()) == sorted(expected_headers.items())
+
+
+def test_curl_response_with_cookies():
+    prepared_request = PreparedRequest()
+    prepared_request.prepare(
+        url="http://somefakeurl",
+        method="GET",
+        headers={}
+    )
+    curl_request = CURLRequest(prepared_request)
+
+    curl_response = CURLResponse(curl_request)
+    curl_response.http_code = 200
+
+    header_lines = [
+        "HTTP/1.1 200 OK\n",
+        "Content-Language: en-US\n",
+        "Cache-Control: no-cache\n",
+        "Set-Cookie: foo=123; SameSite=None; Secure; Max-Age=2592000\n",
+        "Set-Cookie: bar=abc; HttpOnly\n",
+    ]
+
+    for header_line in header_lines:
+        # We provide lines encoded as defined in http standard
+        curl_response.parse_header_line(header_line.encode("iso-8859-1"))
+    
+    req_response = curl_response.to_requests_response()
+    
+    assert len(req_response.cookies) == 2
+    assert req_response.cookies.get("foo") == "123"
+    assert req_response.cookies.get("bar") == "abc"

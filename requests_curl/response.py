@@ -1,10 +1,24 @@
+import io
 import six
 
+from http.client import parse_headers
 from requests import Response as RequestResponse
 from requests.utils import get_encoding_from_headers
 from requests.structures import CaseInsensitiveDict
 from requests.cookies import extract_cookies_to_jar
 from urllib3.response import HTTPResponse as URLLib3Rresponse
+
+
+class _MockHTTPResponse:
+    """Mocks HTTPResponse class to be used as original response when
+    building the urllib3 response for later parsing cookies."""
+
+    def __init__(self, headers_fp):
+        headers_fp.seek(0)
+        self.msg = parse_headers(headers_fp)
+    
+    def isclosed(self):
+        return True
 
 
 class CURLResponse(object):
@@ -23,6 +37,7 @@ class CURLResponse(object):
         self.body = six.BytesIO()
         self.reason = None
         self.http_code = None
+        self._headers_buff = io.BytesIO(b"")
 
     def to_requests_response(self):
         """Returns an instance of `requests.Response` based on this response.
@@ -41,6 +56,7 @@ class CURLResponse(object):
             request_method=self.request.method,
             reason=self.reason,
             preload_content=False,
+            original_response=_MockHTTPResponse(self._headers_buff),
         )
 
         response = RequestResponse()
@@ -60,22 +76,25 @@ class CURLResponse(object):
 
         return response
 
-    def parse_header_line(self, header_line):
+    def parse_header_line(self, raw_header_line):
         """This method is to be used as a callback to configure pycurl.HEADERFUNCTION
         option, which parses each line of the response headers.
 
         Args:
-            str: a line of the headers section.
+            raw_header_line: a line of the headers section.
         """
 
         # HTTP standard specifies that headers are encoded in iso-8859-1.
-        header_line = header_line.decode("iso-8859-1")
+        header_line = raw_header_line.decode("iso-8859-1")
 
         # Header lines include the first status line (HTTP/1.x ...).
         # We are going to ignore all lines that don't have a colon in them.
         # This will botch headers that are split on multiple lines...
         if ":" not in header_line:
             return
+
+        # Save the header line for later parsing cookies
+        self._headers_buff.write(raw_header_line)
 
         name, value = header_line.split(":", 1)
         self.headers[name.strip()] = value.strip()

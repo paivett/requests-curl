@@ -2,19 +2,18 @@
 
 import pycurl
 
-from requests.exceptions import RequestException, InvalidProxyURL
-from requests.utils import select_proxy, prepend_scheme_if_needed
+from requests.exceptions import RequestException
+from requests.utils import select_proxy
 from requests.adapters import (
     BaseAdapter,
     DEFAULT_RETRIES,
     DEFAULT_POOLSIZE,
     DEFAULT_POOLBLOCK,
 )
-from urllib3.util import parse_url
 from urllib3.util.retry import Retry
 from urllib3.exceptions import MaxRetryError
 
-from .pool import CURLHandlerPoolManager, CURLHandlerPool, ProxyCURLHandlerPool
+from .pool_provider import CURLPoolProvider
 from .error import translate_curl_exception
 from .request import CURLRequest
 
@@ -25,26 +24,21 @@ class CURLAdapter(BaseAdapter):
     def __init__(
         self,
         max_retries=DEFAULT_RETRIES,
-        initial_pool_size=DEFAULT_POOLSIZE,
+        max_pools_count=DEFAULT_POOLSIZE,
         max_pool_size=DEFAULT_POOLSIZE,
         pool_block=DEFAULT_POOLBLOCK,
     ):
         super(CURLAdapter, self).__init__()
-
-        self._initial_pool_size = initial_pool_size
-        self._max_pool_size = max_pool_size
-        self._pool_block = pool_block
 
         if max_retries == DEFAULT_RETRIES:
             self.max_retries = Retry(0, read=False)
         else:
             self.max_retries = Retry.from_int(max_retries)
 
-        self._pool_manager = CURLHandlerPoolManager(
+        self._pool_provider = CURLPoolProvider(
+            max_pools=max_pools_count,
             max_pool_size=max_pool_size,
-            initial_pool_size=initial_pool_size,
             pool_block=pool_block,
-            pool_constructor=CURLHandlerPool,
         )
 
         self._proxy_pool_managers = {}
@@ -136,44 +130,15 @@ class CURLAdapter(BaseAdapter):
         Returns:
             CURLConnectionPool: a connection pool that is capable of handling the given request.
         """
-        proxy = select_proxy(url, proxies)
+        proxy_url = select_proxy(url, proxies)
 
-        if proxy:
-            proxy = prepend_scheme_if_needed(proxy, "http")
-            proxy_url = parse_url(proxy)
-            if not proxy_url.host:
-                raise InvalidProxyURL(
-                    "Please check proxy URL. It is malformed"
-                    " and could be missing the host."
-                )
-            proxy_pool_manager = self.proxy_pool_manager_for(proxy_url)
-            pool = proxy_pool_manager.get_pool_from_url(url)
+        if proxy_url:
+            pool = self._pool_provider.get_pool_for_proxied_url(proxy_url, url)
         else:
-            pool = self._pool_manager.get_pool_from_url(url)
+            pool = self._pool_provider.get_pool_for_url(url)
 
         return pool
 
-    def proxy_pool_manager_for(self, proxy_url):
-        if str(proxy_url) in self._proxy_pool_managers:
-            pool_manager = self._proxy_pool_managers[str(proxy_url)]
-        else:
-
-            def pool_constructor(url, port, maxsize=1, **kwargs):
-                return ProxyCURLHandlerPool(
-                    proxy_url, url, port, maxsize=maxsize, **kwargs
-                )
-
-            pool_manager = CURLHandlerPoolManager(
-                max_pool_size=self._max_pool_size,
-                initial_pool_size=self._initial_pool_size,
-                pool_block=self._pool_block,
-                pool_constructor=pool_constructor,
-            )
-
-            self._proxy_pool_managers[str(proxy_url)] = pool_manager
-
-        return pool_manager
-
     def close(self):
         """Cleans up adapter specific items."""
-        self._pool_manager.clear()
+        self._pool_provider.clear()

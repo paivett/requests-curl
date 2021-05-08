@@ -1,7 +1,6 @@
 import pycurl
 
 from six.moves import queue, range
-from urllib3.poolmanager import PoolManager
 
 from .response import CURLResponse
 
@@ -109,7 +108,7 @@ class CURLHandlerPool(object):
             return
 
         # Disable access to the pool
-        old_pool, self.pool = self.pool, None
+        old_pool, self._pool = self._pool, None
 
         try:
             while True:
@@ -138,33 +137,13 @@ class ProxyCURLHandlerPool(CURLHandlerPool):
 
         return options
 
+    @property
+    def proxy_url(self):
+        return self._proxy_url
+
 
 def _get_curl_options_for_response(response):
     return {
         pycurl.HEADERFUNCTION: response.parse_header_line,
         pycurl.WRITEFUNCTION: response.body.write,
     }
-
-
-class CURLHandlerPoolManager(object):
-    def __init__(self, initial_pool_size, max_pool_size, pool_block, pool_constructor):
-        self._poolmanager = PoolManager(
-            num_pools=initial_pool_size,
-            maxsize=max_pool_size,
-            block=pool_block,
-            strict=True,
-        )
-
-        # Let's force the poolmanager to use our CURLHandlerPool instead of the original
-        # HTTPConnectionPool
-        self._poolmanager.pool_classes_by_scheme = {
-            "http": pool_constructor,
-            "https": pool_constructor,
-        }
-
-    def get_pool_from_url(self, url):
-        """Returns an instance of a CURLHandlerPool for a given URL"""
-        return self._poolmanager.connection_from_url(url)
-
-    def clear(self):
-        self._poolmanager.clear()

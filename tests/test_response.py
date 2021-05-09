@@ -61,7 +61,7 @@ def test_curl_response_with_data_and_headers_to_request_response():
     response = CURLResponse(curl_request)
     response.http_code = 200
     response.headers = expected_headers
-    response.body.write(b"someresponsedata") 
+    response.body.write(b"someresponsedata")
 
     req_response = response.to_requests_response()
 
@@ -74,7 +74,7 @@ def test_curl_response_with_data_and_headers_to_request_response():
             "HTTP/1.1 200 OK\n",
             "Content-Language: en-US\n",
         ],
-        {"Content-Language": "en-US",},
+        {"Content-Language": "en-US"},
     ),
     (
         [
@@ -82,7 +82,7 @@ def test_curl_response_with_data_and_headers_to_request_response():
             "Content-Language: en-US\n",
             "Cache-Control: no-cache\n",
         ],
-        {"Content-Language": "en-US", "Cache-Control": "no-cache",},
+        {"Content-Language": "en-US", "Cache-Control": "no-cache"},
     ),
     (
         [
@@ -91,7 +91,7 @@ def test_curl_response_with_data_and_headers_to_request_response():
             "not-a-header\n",
             "Cache-Control: no-cache\n"
         ],
-        {"Content-Language": "en-US", "Cache-Control": "no-cache",},
+        {"Content-Language": "en-US", "Cache-Control": "no-cache"},
     ),
 ))
 def test_curl_response_parse_header_line(header_lines, expected_headers):
@@ -104,11 +104,11 @@ def test_curl_response_parse_header_line(header_lines, expected_headers):
     curl_request = CURLRequest(prepared_request)
 
     response = CURLResponse(curl_request)
-    
+
     for header_line in header_lines:
         # We provide lines encoded as defined in http standard
         response.parse_header_line(header_line.encode("iso-8859-1"))
-    
+
     assert sorted(response.headers.items()) == sorted(expected_headers.items())
 
 
@@ -135,9 +135,9 @@ def test_curl_response_with_cookies():
     for header_line in header_lines:
         # We provide lines encoded as defined in http standard
         curl_response.parse_header_line(header_line.encode("iso-8859-1"))
-    
+
     req_response = curl_response.to_requests_response()
-    
+
     assert len(req_response.cookies) == 2
     assert req_response.cookies.get("foo") == "123"
     assert req_response.cookies.get("bar") == "abc"

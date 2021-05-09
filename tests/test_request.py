@@ -66,7 +66,7 @@ def test_curl_option_with_no_data_nor_headers():
         pycurl.SSL_VERIFYHOST: 0,
         pycurl.SSL_VERIFYPEER: 0,
     }
-    
+
     curl_options = curl_request.options
 
     assert sorted(curl_options.items()) == sorted(expected_options.items())
@@ -117,7 +117,7 @@ def test_curl_options_for_head():
         pycurl.CUSTOMREQUEST: "HEAD",
         pycurl.NOBODY: True,
     }
-    
+
     curl_options = curl_request.options
 
     assert sorted(curl_options.items()) == sorted(expected_options.items())
@@ -138,7 +138,7 @@ def test_curl_options_for_delete():
         pycurl.SSL_VERIFYPEER: 0,
         pycurl.CUSTOMREQUEST: "DELETE",
     }
-    
+
     curl_options = curl_request.options
 
     assert sorted(curl_options.items()) == sorted(expected_options.items())
@@ -259,7 +259,7 @@ def test_curl_options_for_patch():
         pycurl.SSL_VERIFYPEER: 0,
         pycurl.CUSTOMREQUEST: "PATCH",
     }
-    
+
     curl_options = curl_request.options
 
     assert sorted(curl_options.items()) == sorted(expected_options.items())
@@ -280,7 +280,7 @@ def test_curl_options_for_options():
         pycurl.SSL_VERIFYPEER: 0,
         pycurl.CUSTOMREQUEST: "OPTIONS",
     }
-    
+
     curl_options = curl_request.options
 
     assert sorted(curl_options.items()) == sorted(expected_options.items())
@@ -318,7 +318,7 @@ def test_curl_options_for_get_with_multi_timeout_values(timeout):
         method="GET",
     )
     curl_request = CURLRequest(prepared_request, timeout=timeout)
-  
+
     expected_options = {
         pycurl.URL: "http://somefakeurl/",
         pycurl.HTTPHEADER: [],

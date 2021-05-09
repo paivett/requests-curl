@@ -71,7 +71,7 @@ class CURLRequest(object):
             for name, value in six.iteritems(req_headers)
         ]
 
-        return { pycurl.HTTPHEADER: headers }
+        return {pycurl.HTTPHEADER: headers}
 
     def build_http_method_options(self):
         method = self._request.method
@@ -80,19 +80,19 @@ class CURLRequest(object):
         if method == "GET":
             return {}
         else:
-            return { pycurl.CUSTOMREQUEST: method }
+            return {pycurl.CUSTOMREQUEST: method}
 
     def build_body_options(self):
         if self._request.method == "HEAD":
             # Body is not allowed for HEAD
-            return { pycurl.NOBODY: True }
+            return {pycurl.NOBODY: True}
 
         elif self._request.body:
             content_type = self._request.headers.get("Content-Type", "").lower()
             is_encoded_form = content_type == "application/x-www-form-urlencoded"
 
             if is_encoded_form:
-                return { pycurl.POSTFIELDS: self._request.body }
+                return {pycurl.POSTFIELDS: self._request.body}
             else:
                 if hasattr(self._request.body, "read"):
                     self._body_stream = self._request.body
@@ -119,7 +119,7 @@ class CURLRequest(object):
                 pycurl.CONNECTTIMEOUT_MS: int(1000 * conn_timeout),
             }
         elif self._timeout:
-            return { pycurl.TIMEOUT_MS: int(1000 * self._timeout) }
+            return {pycurl.TIMEOUT_MS: int(1000 * self._timeout)}
         else:
             return {}
 
@@ -153,7 +153,7 @@ class CURLRequest(object):
         if self._cert:
             if isinstance(self._cert, six.string_types):
                 cert_path = self._cert
-                return { pycurl.SSLCERT: cert_path }
+                return {pycurl.SSLCERT: cert_path}
             else:
                 cert_path, key_path = self._cert
                 return {

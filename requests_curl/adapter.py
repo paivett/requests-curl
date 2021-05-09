@@ -27,6 +27,7 @@ class CURLAdapter(BaseAdapter):
         max_pools_count=DEFAULT_POOLSIZE,
         max_pool_size=DEFAULT_POOLSIZE,
         pool_block=DEFAULT_POOLBLOCK,
+        pool_provider_factory=CURLPoolProvider,
     ):
         super(CURLAdapter, self).__init__()
 
@@ -35,13 +36,11 @@ class CURLAdapter(BaseAdapter):
         else:
             self.max_retries = Retry.from_int(max_retries)
 
-        self._pool_provider = CURLPoolProvider(
+        self._pool_provider = pool_provider_factory(
             max_pools=max_pools_count,
             max_pool_size=max_pool_size,
             pool_block=pool_block,
         )
-
-        self._proxy_pool_managers = {}
 
     def send(
         self, request, stream=False, timeout=None, verify=True, cert=None, proxies=None
@@ -80,7 +79,7 @@ class CURLAdapter(BaseAdapter):
         try:
             while not retries.is_exhausted():
                 try:
-                    response = self.curl_send(
+                    response = self._curl_send(
                         request,
                         stream=stream,
                         timeout=timeout,
@@ -100,14 +99,14 @@ class CURLAdapter(BaseAdapter):
         except MaxRetryError as retry_error:
             raise retry_error.reason
 
-    def curl_send(
+    def _curl_send(
         self, request, stream=False, timeout=None, verify=True, cert=None, proxies=None
     ):
         """Translates the `requests.PreparedRequest` into a CURLRequest, performs the request, and then
         translates the repsonse to a `requests.Response`, and if there is any exception, it is also
         translated into an appropiate `requests.exceptions.RequestException` subclass."""
         try:
-            curl_connection = self.get_curl_connection(request.url, proxies)
+            curl_connection = self._get_curl_connection(request.url, proxies)
             curl_request = CURLRequest(
                 request, timeout=timeout, cert=cert, verify=verify
             )
@@ -120,7 +119,7 @@ class CURLAdapter(BaseAdapter):
             requests_exception = translate_curl_exception(curl_error)
             raise requests_exception("CURL error {0}".format(curl_error.args))
 
-    def get_curl_connection(self, url, proxies=None):
+    def _get_curl_connection(self, url, proxies=None):
         """Returns a new CURL connection to handle the request to a given URL.
 
         Args:

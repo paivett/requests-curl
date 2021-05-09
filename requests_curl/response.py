@@ -98,3 +98,7 @@ class CURLResponse(object):
 
         name, value = header_line.split(":", 1)
         self.headers[name.strip()] = value.strip()
+
+    def add_header_lines(self, raw_header_lines):
+        for raw_header_line in raw_header_lines:
+            self.parse_header_line(raw_header_line)

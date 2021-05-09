@@ -18,7 +18,7 @@ def test_create_empty_curl_response():
 
     assert response.curl_request is curl_request
     assert response.request is curl_request.request
-    assert response.http_code is None
+    assert response.http_code == 200
     assert not response.headers
     assert response.reason is None
 

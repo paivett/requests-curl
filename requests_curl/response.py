@@ -16,7 +16,7 @@ class _MockHTTPResponse:
     def __init__(self, headers_fp):
         headers_fp.seek(0)
         self.msg = parse_headers(headers_fp)
-    
+
     def isclosed(self):
         return True
 
@@ -24,7 +24,7 @@ class _MockHTTPResponse:
 class CURLResponse(object):
     """This class represents a CURL response"""
 
-    def __init__(self, curl_request):
+    def __init__(self, curl_request, initial_http_code=200):
         """Initializes a new response object.
 
         Args:
@@ -36,7 +36,7 @@ class CURLResponse(object):
         self.headers = dict()
         self.body = six.BytesIO()
         self.reason = None
-        self.http_code = None
+        self.http_code = initial_http_code
         self._headers_buff = io.BytesIO(b"")
 
     def to_requests_response(self):

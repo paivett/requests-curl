@@ -50,7 +50,7 @@ class FakePool:
             response = CURLResponse(curl_request)
             response.status = response_data[0]
             response.body.write(response_data[1])
-            response.add_header_lines(response_data[2])
+            response.add_headers_from_raw_lines(response_data[2])
 
             return response
 

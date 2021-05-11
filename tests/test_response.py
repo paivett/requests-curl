@@ -107,7 +107,7 @@ def test_curl_response_parse_header_line(header_lines, expected_headers):
 
     for header_line in header_lines:
         # We provide lines encoded as defined in http standard
-        response.parse_header_line(header_line.encode("iso-8859-1"))
+        response.add_header_from_raw_line(header_line.encode("iso-8859-1"))
 
     assert sorted(response.headers.items()) == sorted(expected_headers.items())
 
@@ -134,7 +134,7 @@ def test_curl_response_with_cookies():
 
     for header_line in header_lines:
         # We provide lines encoded as defined in http standard
-        curl_response.parse_header_line(header_line.encode("iso-8859-1"))
+        curl_response.add_header_from_raw_line(header_line.encode("iso-8859-1"))
 
     req_response = curl_response.to_requests_response()
 

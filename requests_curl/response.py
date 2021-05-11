@@ -76,12 +76,14 @@ class CURLResponse(object):
 
         return response
 
-    def parse_header_line(self, raw_header_line):
+    def add_header_from_raw_line(self, raw_header_line):
         """This method is to be used as a callback to configure pycurl.HEADERFUNCTION
         option, which parses each line of the response headers.
 
+        The line must an array of bytes, encoded in iso-8859-1, representing the line.
+
         Args:
-            raw_header_line: a line of the headers section.
+            raw_header_line: a line of the headers section, as bytes.
         """
 
         # HTTP standard specifies that headers are encoded in iso-8859-1.
@@ -99,6 +101,13 @@ class CURLResponse(object):
         name, value = header_line.split(":", 1)
         self.headers[name.strip()] = value.strip()
 
-    def add_header_lines(self, raw_header_lines):
+    def add_headers_from_raw_lines(self, raw_header_lines):
+        """This method parses and adds all headers defined by the iterable of raw header lines.
+
+        Each line is a byte array encoded in iso-8859-1, representing a line string.
+
+        Args:
+            raw_header_lines: an iterable of raw lines to be added to the respponse.
+        """
         for raw_header_line in raw_header_lines:
-            self.parse_header_line(raw_header_line)
+            self.add_header_from_raw_line(raw_header_line)

@@ -144,6 +144,6 @@ class ProxyCURLHandlerPool(CURLHandlerPool):
 
 def _get_curl_options_for_response(response):
     return {
-        pycurl.HEADERFUNCTION: response.parse_header_line,
+        pycurl.HEADERFUNCTION: response.add_header_from_raw_line,
         pycurl.WRITEFUNCTION: response.body.write,
     }

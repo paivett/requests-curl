@@ -20,12 +20,12 @@ class ClosedPool(PoolException):
 class CURLHandlerPool(object):
     """Thread-safe connection pool for one host. Tries to emulate HTTPConnectionPool."""
 
-    def __init__(self, url, port, maxsize=1, **kwargs):
+    def __init__(self, curl_factory=pycurl.Curl, maxsize=1, **kwargs):
         self._block = kwargs.get("block", False)
         self._pool = queue.LifoQueue(maxsize)
 
         for _ in range(maxsize):
-            handler = pycurl.Curl()
+            handler = curl_factory()
             self._pool.put(handler, block=False)
 
     def send(self, curl_request):
@@ -120,8 +120,8 @@ class CURLHandlerPool(object):
 
 
 class ProxyCURLHandlerPool(CURLHandlerPool):
-    def __init__(self, proxy_url, url, port, maxsize=1, **kwargs):
-        super(ProxyCURLHandlerPool, self).__init__(url, port, maxsize=maxsize, **kwargs)
+    def __init__(self, proxy_url, maxsize=1, **kwargs):
+        super(ProxyCURLHandlerPool, self).__init__(maxsize=maxsize, **kwargs)
 
         self._proxy_url = proxy_url
 

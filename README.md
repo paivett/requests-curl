@@ -39,6 +39,21 @@ Tests are implemented with pytest. To run tests, just do
 
     pytest tests/
 
+### End-to-end tests
+These tests are meant to test that the whole communication with a real server works. For these tests, we use docker compose and the server is based on [httpbin](http://httpbin.org/).
+
+To run these tests, you will need Docker Compose. First, build the test runner image
+
+```
+docker-compose -f docker-compose.tests.yml build
+```
+
+Then run tests
+
+```
+docker-compose -f docker-compose.tests.yml up --exit-code-from e2e_tests_runner
+```
+
 ## Release history
 
  * 0.1

@@ -1,4 +1,3 @@
-import pytest
 import requests
 
 from requests_curl.adapter import CURLAdapter
@@ -7,7 +6,7 @@ from requests_curl.adapter import CURLAdapter
 def test_headers():
     session = requests.Session()
 
-    session.mount("https://", CURLAdapter())
+    session.mount("http://", CURLAdapter())
 
     url = f"http://http_bin/headers"
 

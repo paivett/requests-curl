@@ -18,6 +18,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
         run: |
+          sudo apt-get install libcurl4-openssl-dev
           python -m pip install --upgrade pipenv
           pipenv install --dev
       - name: Run unit tests

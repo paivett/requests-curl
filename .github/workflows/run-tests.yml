@@ -19,7 +19,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get install libcurl4-openssl-dev
-          python -m pip install --upgrade pipenv
+          pip install pipenv
           pipenv install --dev
       - name: Run unit tests
         run: |

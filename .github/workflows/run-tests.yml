@@ -20,7 +20,7 @@ jobs:
         run: |
           sudo apt-get install libcurl4-openssl-dev
           pip install pipenv
-          pipenv install --dev
+          pipenv install --dev --python ${{ matrix.python-version }}
       - name: Run unit tests
         run: |
           pipenv run pytest tests/

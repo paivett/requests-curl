@@ -3,7 +3,7 @@ name: Run requests-curl tests
 on: [push]
 
 jobs:
-  build:
+  tests:
 
     runs-on: ubuntu-latest
     strategy:
@@ -21,6 +21,12 @@ jobs:
           sudo apt-get install libcurl4-openssl-dev
           pip install pipenv
           pipenv install --dev --python ${{ matrix.python-version }}
+      - name: Lint with flake8
+        run: |
+          # stop the build if there are Python syntax errors or undefined names
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
       - name: Run unit tests
         run: |
           pipenv run pytest tests/

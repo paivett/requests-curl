@@ -7,9 +7,6 @@ from requests.exceptions import (
     ReadTimeout,
     SSLError,
     ProxyError,
-    InvalidProxyURL,
-    InvalidURL,
-    RequestException,
 )
 
 _PYCURL_SSL_ERRORS = {

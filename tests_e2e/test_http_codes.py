@@ -3,6 +3,8 @@ import requests
 
 from requests_curl.adapter import CURLAdapter
 
+from tests_e2e import HTTP_BIN_BASE_URL
+
 
 @pytest.mark.parametrize(
     "method",
@@ -29,7 +31,7 @@ def test_http_codes(method, http_code):
 
     session_with_curl.mount("http://", CURLAdapter())
 
-    url = f"http://http_bin/status/{http_code}"
+    url = f"{HTTP_BIN_BASE_URL}/status/{http_code}"
 
     response = getattr(session, method)(url)
     response_with_curl = getattr(session_with_curl, method)(url)

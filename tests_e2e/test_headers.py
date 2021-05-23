@@ -2,13 +2,15 @@ import requests
 
 from requests_curl.adapter import CURLAdapter
 
+from tests_e2e import HTTP_BIN_BASE_URL
+
 
 def test_headers():
     session = requests.Session()
 
     session.mount("http://", CURLAdapter())
 
-    url = f"http://http_bin/headers"
+    url = f"{HTTP_BIN_BASE_URL}/headers"
 
     headers_to_send = {
         "User-Agent": "my-app/0.0.1",

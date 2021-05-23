@@ -2,13 +2,15 @@ import requests
 
 from requests_curl import CURLAdapter
 
+from tests_e2e import HTTP_BIN_BASE_URL
+
 
 def test_empty_cookies_when_no_cookies_were_set():
     session = requests.Session()
 
     session.mount("http://", CURLAdapter())
 
-    url = f"http://http_bin/cookies"
+    url = f"{HTTP_BIN_BASE_URL}/cookies"
 
     response = session.get(url)
 
@@ -20,7 +22,7 @@ def test_set_single_cookie():
 
     session.mount("http://", CURLAdapter())
 
-    url = "http://http_bin/cookies/set/foo/cookievalue"
+    url = f"{HTTP_BIN_BASE_URL}/cookies/set/foo/cookievalue"
 
     response = session.get(url)
 
@@ -35,7 +37,7 @@ def test_delete_cookies():
 
     session.mount("http://", CURLAdapter())
 
-    url = "http://http_bin/cookies/set/foo/cookievalue"
+    url = f"{HTTP_BIN_BASE_URL}/cookies/set/foo/cookievalue"
 
     response = session.get(url)
 
@@ -43,6 +45,6 @@ def test_delete_cookies():
 
     session.cookies.clear()
 
-    response = session.get("http://http_bin/cookies")
+    response = session.get(f"{HTTP_BIN_BASE_URL}/cookies")
 
     assert response.json()["cookies"] == {}

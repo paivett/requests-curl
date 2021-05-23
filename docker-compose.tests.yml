@@ -9,3 +9,5 @@ services:
     command: "pipenv run pytest tests_e2e/"
     depends_on:
       - http_bin
+    environment:
+      - HTTP_BIN_HOST=http_bin

@@ -1,4 +1,5 @@
 # requests-curl
+[![Tests](https://github.com/paivett/requests-curl/actions/workflows/run-tests.yml/badge.svg)](https://github.com/paivett/requests-curl/actions/workflows/run-tests.yml)
 
 This package provides an adapter to use [PyCURL](http://pycurl.io) as backend for the [requests](http://docs.python-requests.org/en/master/) library.
 

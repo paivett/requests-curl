@@ -1,4 +1,4 @@
-name: Run requests-curl tests
+name: Tests
 
 on: [push]
 

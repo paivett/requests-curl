@@ -80,16 +80,18 @@ def test_curl_options_with_some_extra_headers():
         headers={
             "Content-Language": "en-US",
             "Cache-Control": "no-cache",
-        }
+        },
     )
     curl_request = CURLRequest(prepared_request)
 
     curl_options = curl_request.options
 
-    expected_headers = sorted([
-        "Cache-Control: no-cache",
-        "Content-Language: en-US",
-    ])
+    expected_headers = sorted(
+        [
+            "Cache-Control: no-cache",
+            "Content-Language: en-US",
+        ]
+    )
 
     assert len(curl_options) == 4
     assert curl_options[pycurl.URL] == "http://somefakeurl/"
@@ -105,7 +107,7 @@ def test_curl_options_for_head():
         method="HEAD",
         headers={
             "Cache-Control": "no-cache",
-        }
+        },
     )
     curl_request = CURLRequest(prepared_request)
 
@@ -144,12 +146,17 @@ def test_curl_options_for_delete():
     assert sorted(curl_options.items()) == sorted(expected_options.items())
 
 
-@pytest.mark.parametrize("data, expected_data", (
-    ("somedata", b"somedata"),
-    ("some-ütf8-data", b"some-\xc3\xbctf8-data"),
-))
+@pytest.mark.parametrize(
+    "data, expected_data",
+    (
+        ("somedata", b"somedata"),
+        ("some-ütf8-data", b"some-\xc3\xbctf8-data"),
+    ),
+)
 @pytest.mark.parametrize("http_method", ("POST", "PUT"))
-def test_curl_options_for_post_put_with_some_string_data(http_method, data, expected_data):
+def test_curl_options_for_post_put_with_some_string_data(
+    http_method, data, expected_data
+):
     prepared_request = PreparedRequest()
     prepared_request.prepare(
         url="http://somefakeurl",
@@ -177,20 +184,23 @@ def test_curl_options_for_post_put_with_some_string_data(http_method, data, expe
     assert curl_options[pycurl.READFUNCTION]() == expected_data
 
 
-@pytest.mark.parametrize("form, expected_encoded_form", (
+@pytest.mark.parametrize(
+    "form, expected_encoded_form",
     (
-        {"field1": "data1", "field2": "data2"},
-        "field1=data1&field2=data2",
+        (
+            {"field1": "data1", "field2": "data2"},
+            "field1=data1&field2=data2",
+        ),
+        (
+            [("field1", "data1"), ("field2", "data2")],
+            "field1=data1&field2=data2",
+        ),
+        (
+            {"field1": "data1", "field2": "datüm"},
+            "field1=data1&field2=dat%C3%BCm",
+        ),
     ),
-    (
-        [("field1", "data1"), ("field2", "data2")],
-        "field1=data1&field2=data2",
-    ),
-    (
-        {"field1": "data1", "field2": "datüm"},
-        "field1=data1&field2=dat%C3%BCm",
-    ),
-))
+)
 def test_curl_option_for_post_with_body_with_form_data(form, expected_encoded_form):
     prepared_request = PreparedRequest()
     prepared_request.prepare(
@@ -202,10 +212,12 @@ def test_curl_option_for_post_with_body_with_form_data(form, expected_encoded_fo
 
     curl_options = curl_request.options
 
-    expected_headers = sorted([
-        f"Content-Length: {len(expected_encoded_form)}",
-        "Content-Type: application/x-www-form-urlencoded",
-    ])
+    expected_headers = sorted(
+        [
+            f"Content-Length: {len(expected_encoded_form)}",
+            "Content-Type: application/x-www-form-urlencoded",
+        ]
+    )
 
     assert len(curl_options) == 6
     assert curl_options[pycurl.URL] == "http://somefakeurl/"
@@ -307,10 +319,13 @@ def test_curl_options_for_get_with_timeout_in_seconds():
     assert sorted(curl_options.items()) == sorted(expected_options.items())
 
 
-@pytest.mark.parametrize("timeout", (
-    (1.234, 1),
-    [1.234, 1],
-))
+@pytest.mark.parametrize(
+    "timeout",
+    (
+        (1.234, 1),
+        [1.234, 1],
+    ),
+)
 def test_curl_options_for_get_with_multi_timeout_values(timeout):
     prepared_request = PreparedRequest()
     prepared_request.prepare(
@@ -426,7 +441,9 @@ def test_curl_options_for_get_with_cert_and_key():
         url="http://somefakeurl",
         method="GET",
     )
-    curl_request = CURLRequest(prepared_request, verify=True, cert=("/some/path", "key"))
+    curl_request = CURLRequest(
+        prepared_request, verify=True, cert=("/some/path", "key")
+    )
 
     expected_options = {
         pycurl.URL: "http://somefakeurl/",

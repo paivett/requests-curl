@@ -4,9 +4,16 @@ import requests
 from requests_curl.adapter import CURLAdapter
 
 
-@pytest.mark.parametrize("method", (
-    "get", "post", "put", "delete", "patch",
-))
+@pytest.mark.parametrize(
+    "method",
+    (
+        "get",
+        "post",
+        "put",
+        "delete",
+        "patch",
+    ),
+)
 def test_method(method):
     session = requests.Session()
     session_with_curl = requests.Session()

@@ -4,13 +4,17 @@ import pytest
 from requests import PreparedRequest
 from urllib3.util import parse_url
 
-from requests_curl.pool import CURLHandlerPool, ClosedPool, EmptyPool, ProxyCURLHandlerPool
+from requests_curl.pool import (
+    CURLHandlerPool,
+    ClosedPool,
+    EmptyPool,
+    ProxyCURLHandlerPool,
+)
 from requests_curl.request import CURLRequest
 
 
 class FakeCurlHandler:
-    
-    def __init__(self) :
+    def __init__(self):
         self.options = {}
         self._performed = False
         self._open = True
@@ -27,7 +31,7 @@ class FakeCurlHandler:
     def _write_body(self):
         write_func = self.options[pycurl.WRITEFUNCTION]
         write_func(self.body)
-    
+
     def _write_headers(self):
         add_header_func = self.options[pycurl.HEADERFUNCTION]
         for line in self.header_lines:
@@ -47,7 +51,7 @@ class FakeCurlHandler:
     @property
     def open(self):
         return self._open
-    
+
     @property
     def performed(self):
         return self._performed
@@ -58,11 +62,7 @@ class FakeCurlHandler:
 
 def test_pool_send_configures_handler_correctly():
     prepared_request = PreparedRequest()
-    prepared_request.prepare(
-        url="http://somefakeurl",
-        method="GET",
-        headers={}
-    )
+    prepared_request.prepare(url="http://somefakeurl", method="GET", headers={})
     curl_request = CURLRequest(prepared_request)
     curl_handler = FakeCurlHandler()
 
@@ -95,11 +95,7 @@ def test_pool_send_configures_handler_correctly():
 
 def test_pool_puts_back_handler_after_successful_send():
     prepared_request = PreparedRequest()
-    prepared_request.prepare(
-        url="http://somefakeurl",
-        method="GET",
-        headers={}
-    )
+    prepared_request.prepare(url="http://somefakeurl", method="GET", headers={})
     curl_request = CURLRequest(prepared_request)
     curl_handler = FakeCurlHandler()
 
@@ -122,7 +118,7 @@ def test_pool_closes_all_handles_when_it_is_closed():
 
     assert curl_handler_1.open
     assert curl_handler_2.open
-    
+
     pool.close()
 
     assert not curl_handler_1.open
@@ -139,7 +135,7 @@ def test_pool_close_is_idempotent(mocker):
 
     assert curl_handler_1.open
     assert curl_handler_2.open
-    
+
     pool.close()
     pool.close()
 
@@ -186,11 +182,7 @@ def test_returning_a_handler_after_pool_closed_does_not_fail(mocker):
 
 def test_proxy_pool_configures_handler_with_proxy_optionsl(mocker):
     prepared_request = PreparedRequest()
-    prepared_request.prepare(
-        url="http://somefakeurl",
-        method="GET",
-        headers={}
-    )
+    prepared_request.prepare(url="http://somefakeurl", method="GET", headers={})
     curl_request = CURLRequest(prepared_request)
     curl_handler = FakeCurlHandler()
 
@@ -231,11 +223,7 @@ def test_proxy_pool_configures_handler_with_proxy_optionsl(mocker):
 
 def test_proxy_pool_configures_handler_with_proxy_user_and_password(mocker):
     prepared_request = PreparedRequest()
-    prepared_request.prepare(
-        url="http://somefakeurl",
-        method="GET",
-        headers={}
-    )
+    prepared_request.prepare(url="http://somefakeurl", method="GET", headers={})
     curl_request = CURLRequest(prepared_request)
     curl_handler = FakeCurlHandler()
 

@@ -7,11 +7,7 @@ from requests_curl.request import CURLRequest
 
 def test_create_empty_curl_response():
     prepared_request = PreparedRequest()
-    prepared_request.prepare(
-        url="http://somefakeurl",
-        method="GET",
-        headers={}
-    )
+    prepared_request.prepare(url="http://somefakeurl", method="GET", headers={})
     curl_request = CURLRequest(prepared_request)
 
     response = CURLResponse(curl_request)
@@ -25,11 +21,7 @@ def test_create_empty_curl_response():
 
 def test_empty_curl_response_to_request_response():
     prepared_request = PreparedRequest()
-    prepared_request.prepare(
-        url="http://somefakeurl",
-        method="GET",
-        headers={}
-    )
+    prepared_request.prepare(url="http://somefakeurl", method="GET", headers={})
     curl_request = CURLRequest(prepared_request)
 
     response = CURLResponse(curl_request)
@@ -46,11 +38,7 @@ def test_empty_curl_response_to_request_response():
 
 def test_curl_response_with_data_and_headers_to_request_response():
     prepared_request = PreparedRequest()
-    prepared_request.prepare(
-        url="http://somefakeurl",
-        method="GET",
-        headers={}
-    )
+    prepared_request.prepare(url="http://somefakeurl", method="GET", headers={})
     curl_request = CURLRequest(prepared_request)
 
     expected_headers = {
@@ -68,39 +56,38 @@ def test_curl_response_with_data_and_headers_to_request_response():
     assert sorted(req_response.headers.items()) == sorted(expected_headers.items())
 
 
-@pytest.mark.parametrize("header_lines, expected_headers", (
+@pytest.mark.parametrize(
+    "header_lines, expected_headers",
     (
-        [
-            "HTTP/1.1 200 OK\n",
-            "Content-Language: en-US\n",
-        ],
-        {"Content-Language": "en-US"},
+        (
+            [
+                "HTTP/1.1 200 OK\n",
+                "Content-Language: en-US\n",
+            ],
+            {"Content-Language": "en-US"},
+        ),
+        (
+            [
+                "HTTP/1.1 200 OK\n",
+                "Content-Language: en-US\n",
+                "Cache-Control: no-cache\n",
+            ],
+            {"Content-Language": "en-US", "Cache-Control": "no-cache"},
+        ),
+        (
+            [
+                "HTTP/1.1 200 OK\n",
+                "Content-Language: en-US\n",
+                "not-a-header\n",
+                "Cache-Control: no-cache\n",
+            ],
+            {"Content-Language": "en-US", "Cache-Control": "no-cache"},
+        ),
     ),
-    (
-        [
-            "HTTP/1.1 200 OK\n",
-            "Content-Language: en-US\n",
-            "Cache-Control: no-cache\n",
-        ],
-        {"Content-Language": "en-US", "Cache-Control": "no-cache"},
-    ),
-    (
-        [
-            "HTTP/1.1 200 OK\n",
-            "Content-Language: en-US\n",
-            "not-a-header\n",
-            "Cache-Control: no-cache\n"
-        ],
-        {"Content-Language": "en-US", "Cache-Control": "no-cache"},
-    ),
-))
+)
 def test_curl_response_parse_header_line(header_lines, expected_headers):
     prepared_request = PreparedRequest()
-    prepared_request.prepare(
-        url="http://somefakeurl",
-        method="GET",
-        headers={}
-    )
+    prepared_request.prepare(url="http://somefakeurl", method="GET", headers={})
     curl_request = CURLRequest(prepared_request)
 
     response = CURLResponse(curl_request)
@@ -114,11 +101,7 @@ def test_curl_response_parse_header_line(header_lines, expected_headers):
 
 def test_curl_response_with_cookies():
     prepared_request = PreparedRequest()
-    prepared_request.prepare(
-        url="http://somefakeurl",
-        method="GET",
-        headers={}
-    )
+    prepared_request.prepare(url="http://somefakeurl", method="GET", headers={})
     curl_request = CURLRequest(prepared_request)
 
     curl_response = CURLResponse(curl_request)

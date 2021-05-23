@@ -115,7 +115,9 @@ def test_provider_returns_the_same_pool_for_the_same_proxied_host():
     the_same_host_url = "https://someurl.io/something"
 
     handler_pool_1 = pool_provider.get_pool_for_proxied_url(proxy_url, url)
-    handler_pool_2 = pool_provider.get_pool_for_proxied_url(proxy_url, the_same_host_url)
+    handler_pool_2 = pool_provider.get_pool_for_proxied_url(
+        proxy_url, the_same_host_url
+    )
 
     assert handler_pool_1 is handler_pool_2
 

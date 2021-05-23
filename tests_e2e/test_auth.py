@@ -10,7 +10,7 @@ def test_successful_basic_auth():
 
     user = "someuser"
     pwd = "somepwd"
-    
+
     url = f"http://http_bin/basic-auth/{user}/{pwd}"
 
     response = session.get(url, auth=HTTPBasicAuth(user, pwd))
@@ -25,7 +25,7 @@ def test_unauthorized_basic_auth():
 
     user = "someuser"
     pwd = "somepwd"
-    
+
     url = f"http://http_bin/basic-auth/{user}/{pwd}"
 
     response = session.get(url)
@@ -39,7 +39,7 @@ def test_successful_bearer_token_auth():
     session.mount("http://", CURLAdapter())
 
     token = "sometoken"
-    
+
     url = f"http://http_bin/bearer"
 
     headers = {"Authorization": f"Bearer {token}"}
@@ -54,7 +54,7 @@ def test_unauthorized_bearer_token_auth():
     session = requests.Session()
 
     session.mount("http://", CURLAdapter())
-    
+
     url = f"http://http_bin/bearer"
 
     response = session.get(url)

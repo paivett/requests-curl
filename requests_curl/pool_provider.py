@@ -48,8 +48,9 @@ class CURLPoolProvider(object):
         if parsed_proxy_url not in self._pool_manager_per_proxy:
             # Create here the poolmanager for proxy
             self._pool_manager_per_proxy[parsed_proxy_url] = self._create_pool_manager(
-                lambda url, port, maxsize=1, **kwargs:
-                    ProxyCURLHandlerPool(proxy_url, maxsize=maxsize, **kwargs)
+                lambda url, port, maxsize=1, **kwargs: ProxyCURLHandlerPool(
+                    proxy_url, maxsize=maxsize, **kwargs
+                )
             )
 
         pool_manager = self._pool_manager_per_proxy[parsed_proxy_url]
@@ -58,10 +59,7 @@ class CURLPoolProvider(object):
 
     @property
     def _pool_managers(self):
-        return chain(
-            (self._pool_manager,),
-            self._pool_manager_per_proxy.values()
-        )
+        return chain((self._pool_manager,), self._pool_manager_per_proxy.values())
 
     def clear(self):
         for pool_manager in self._pool_managers:
@@ -70,8 +68,7 @@ class CURLPoolProvider(object):
     def __len__(self):
         """Returns the number of pools that this provider currently handles"""
         proxy_pools_count = sum(
-            len(pool_manager.pools)
-            for pool_manager in self._pool_managers
+            len(pool_manager.pools) for pool_manager in self._pool_managers
         )
         return proxy_pools_count
 
@@ -82,8 +79,7 @@ def _parse_proxy_url(proxy_url):
 
     if not parsed_proxy_url.host:
         raise InvalidProxyURL(
-            "Please check proxy URL. It is malformed"
-            " and could be missing the host."
+            "Please check proxy URL. It is malformed" " and could be missing the host."
         )
 
     return parsed_proxy_url

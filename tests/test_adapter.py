@@ -29,14 +29,11 @@ def test_create_adapter_with_custom_retries():
 
 
 class FakePool:
-
     def __init__(self):
         self._response_data = deque()
 
     def add_response(self, status, body, header_lines):
-        self._response_data.append(
-            (status, body, header_lines)
-        )
+        self._response_data.append((status, body, header_lines))
 
     def add_exception(self, exception):
         self._response_data.append(exception)
@@ -56,7 +53,6 @@ class FakePool:
 
 
 class FakePoolProvider:
-
     def __init__(self, *args, **kwargs):
         self._pools = {}
         self._cleared = False
@@ -83,11 +79,7 @@ class FakePoolProvider:
 
 def test_adapter_performs_a_successful_request():
     request = PreparedRequest()
-    request.prepare(
-        url="http://somefakeurl",
-        method="GET",
-        headers={}
-    )
+    request.prepare(url="http://somefakeurl", method="GET", headers={})
 
     header_lines = [
         b"HTTP/1.1 200 OK\n",
@@ -104,16 +96,12 @@ def test_adapter_performs_a_successful_request():
 
     assert response.status_code == 200
     assert response.text == "somebodydata"
-    assert response.headers == {'Content-Language': 'en-US'}
+    assert response.headers == {"Content-Language": "en-US"}
 
 
 def test_adapter_performs_retry_after_an_exception():
     request = PreparedRequest()
-    request.prepare(
-        url="http://somefakeurl",
-        method="GET",
-        headers={}
-    )
+    request.prepare(url="http://somefakeurl", method="GET", headers={})
 
     header_lines = [
         b"HTTP/1.1 200 OK\n",
@@ -125,22 +113,20 @@ def test_adapter_performs_retry_after_an_exception():
     pool_provider = FakePoolProvider()
     pool_provider.add_pool_for_url(request.url, pool)
 
-    adapter = CURLAdapter(max_retries=1, pool_provider_factory=lambda *args, **kwargs: pool_provider)
+    adapter = CURLAdapter(
+        max_retries=1, pool_provider_factory=lambda *args, **kwargs: pool_provider
+    )
 
     response = adapter.send(request)
 
     assert response.status_code == 200
     assert response.text == "somebodydata"
-    assert response.headers == {'Content-Language': 'en-US'}
+    assert response.headers == {"Content-Language": "en-US"}
 
 
 def test_adapter_reaches_max_retries_and_raises_exception():
     request = PreparedRequest()
-    request.prepare(
-        url="http://somefakeurl",
-        method="GET",
-        headers={}
-    )
+    request.prepare(url="http://somefakeurl", method="GET", headers={})
 
     pool = FakePool()
     pool.add_exception(ConnectionError())
@@ -148,42 +134,49 @@ def test_adapter_reaches_max_retries_and_raises_exception():
     pool_provider = FakePoolProvider()
     pool_provider.add_pool_for_url(request.url, pool)
 
-    adapter = CURLAdapter(max_retries=1, pool_provider_factory=lambda *args, **kwargs: pool_provider)
+    adapter = CURLAdapter(
+        max_retries=1, pool_provider_factory=lambda *args, **kwargs: pool_provider
+    )
 
     with pytest.raises(ReadTimeout):
         adapter.send(request)
 
 
-@pytest.mark.parametrize("error_code, error_msg, expected_exception", (
-    (pycurl.E_SSL_CACERT, "some ssl error", SSLError),
-    (pycurl.E_SSL_CACERT_BADFILE, "some ssl error", SSLError),
-    (pycurl.E_SSL_CERTPROBLEM, "some ssl error", SSLError),
-    (pycurl.E_SSL_CIPHER, "some ssl error", SSLError),
-    (pycurl.E_SSL_CONNECT_ERROR, "some ssl error", SSLError),
-    (pycurl.E_SSL_CRL_BADFILE, "some ssl error", SSLError),
-    (pycurl.E_SSL_ENGINE_INITFAILED, "some ssl error", SSLError),
-    (pycurl.E_SSL_ENGINE_NOTFOUND, "some ssl error", SSLError),
-    (pycurl.E_SSL_ENGINE_SETFAILED, "some ssl error", SSLError),
-    (pycurl.E_SSL_INVALIDCERTSTATUS, "some ssl error", SSLError),
-    (pycurl.E_SSL_ISSUER_ERROR, "some ssl error", SSLError),
-    (pycurl.E_SSL_PEER_CERTIFICATE, "some ssl error", SSLError),
-    (pycurl.E_SSL_PINNEDPUBKEYNOTMATCH, "some ssl error", SSLError),
-    (pycurl.E_SSL_SHUTDOWN_FAILED, "some ssl error", SSLError),
-    (pycurl.E_OPERATION_TIMEOUTED, "Connection timed out", ConnectTimeout),
-    (pycurl.E_OPERATION_TIMEDOUT, "Connection timed out", ConnectTimeout),
-    (pycurl.E_OPERATION_TIMEOUTED, "Some other time error", ReadTimeout),
-    (pycurl.E_OPERATION_TIMEDOUT, "Some other time error", ReadTimeout),
-    (pycurl.E_COULDNT_RESOLVE_PROXY, "Resolve proxy error", ProxyError),
-    (pycurl.E_RECV_ERROR, "Received HTTP code 407 from proxy after CONNECT", ProxyError),
-    (pycurl.E_GOT_NOTHING, "Some misterious error", ConnectionError),
-))
-def test_adapter_translates_from_pycurl_errors(error_code, error_msg, expected_exception):
+@pytest.mark.parametrize(
+    "error_code, error_msg, expected_exception",
+    (
+        (pycurl.E_SSL_CACERT, "some ssl error", SSLError),
+        (pycurl.E_SSL_CACERT_BADFILE, "some ssl error", SSLError),
+        (pycurl.E_SSL_CERTPROBLEM, "some ssl error", SSLError),
+        (pycurl.E_SSL_CIPHER, "some ssl error", SSLError),
+        (pycurl.E_SSL_CONNECT_ERROR, "some ssl error", SSLError),
+        (pycurl.E_SSL_CRL_BADFILE, "some ssl error", SSLError),
+        (pycurl.E_SSL_ENGINE_INITFAILED, "some ssl error", SSLError),
+        (pycurl.E_SSL_ENGINE_NOTFOUND, "some ssl error", SSLError),
+        (pycurl.E_SSL_ENGINE_SETFAILED, "some ssl error", SSLError),
+        (pycurl.E_SSL_INVALIDCERTSTATUS, "some ssl error", SSLError),
+        (pycurl.E_SSL_ISSUER_ERROR, "some ssl error", SSLError),
+        (pycurl.E_SSL_PEER_CERTIFICATE, "some ssl error", SSLError),
+        (pycurl.E_SSL_PINNEDPUBKEYNOTMATCH, "some ssl error", SSLError),
+        (pycurl.E_SSL_SHUTDOWN_FAILED, "some ssl error", SSLError),
+        (pycurl.E_OPERATION_TIMEOUTED, "Connection timed out", ConnectTimeout),
+        (pycurl.E_OPERATION_TIMEDOUT, "Connection timed out", ConnectTimeout),
+        (pycurl.E_OPERATION_TIMEOUTED, "Some other time error", ReadTimeout),
+        (pycurl.E_OPERATION_TIMEDOUT, "Some other time error", ReadTimeout),
+        (pycurl.E_COULDNT_RESOLVE_PROXY, "Resolve proxy error", ProxyError),
+        (
+            pycurl.E_RECV_ERROR,
+            "Received HTTP code 407 from proxy after CONNECT",
+            ProxyError,
+        ),
+        (pycurl.E_GOT_NOTHING, "Some misterious error", ConnectionError),
+    ),
+)
+def test_adapter_translates_from_pycurl_errors(
+    error_code, error_msg, expected_exception
+):
     request = PreparedRequest()
-    request.prepare(
-        url="http://somefakeurl",
-        method="GET",
-        headers={}
-    )
+    request.prepare(url="http://somefakeurl", method="GET", headers={})
 
     pool = FakePool()
     pool.add_exception(pycurl.error(error_code, error_msg))
@@ -199,7 +192,9 @@ def test_adapter_translates_from_pycurl_errors(error_code, error_msg, expected_e
 def test_adapter_clears_pool_provider_after_close():
     pool_provider = FakePoolProvider()
 
-    adapter = CURLAdapter(max_retries=1, pool_provider_factory=lambda *args, **kwargs: pool_provider)
+    adapter = CURLAdapter(
+        max_retries=1, pool_provider_factory=lambda *args, **kwargs: pool_provider
+    )
 
     adapter.close()
 
@@ -208,11 +203,7 @@ def test_adapter_clears_pool_provider_after_close():
 
 def test_adapter_performs_a_successful_request_through_proxy():
     request = PreparedRequest()
-    request.prepare(
-        url="http://somefakeurl",
-        method="GET",
-        headers={}
-    )
+    request.prepare(url="http://somefakeurl", method="GET", headers={})
 
     proxies = {
         "http": "http://localhost:8080",
@@ -234,4 +225,4 @@ def test_adapter_performs_a_successful_request_through_proxy():
 
     assert response.status_code == 200
     assert response.text == "data obtained through proxy"
-    assert response.headers == {'Content-Language': 'en-US'}
+    assert response.headers == {"Content-Language": "en-US"}
